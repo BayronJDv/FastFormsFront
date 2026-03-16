@@ -22,17 +22,35 @@ const Header = () => {
 
   return (
     <header className="site-header">
-      <h1 className="site-title">FastForms</h1>
-      <nav>
+
+      <div className="header-left">
+        <div className="logo-icon">⚡</div>
+        <h1 className="site-title">Fast Forms</h1>
+      </div>
+
+      <nav className="header-center">
+        <a href="#">Características</a>
+        <a href="#">Cómo funciona</a>
+      </nav>
+
+      <div className="header-right">
         {user ? (
-          <button onClick={handleLogout}>Cerrar sesión</button>
+          <button className="logout-btn" onClick={handleLogout}>
+            Cerrar sesión
+          </button>
         ) : (
           <>
-            <Link to="/register">Registrarse</Link>
-            <Link to="/login">Iniciar sesión</Link>
+            <Link className="login-link" to="/login">
+              Iniciar sesión
+            </Link>
+
+            <Link className="register-btn" to="/register">
+              Registrarse
+            </Link>
           </>
         )}
-      </nav>
+      </div>
+
     </header>
   )
 }

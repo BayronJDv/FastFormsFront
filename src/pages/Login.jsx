@@ -1,9 +1,10 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { userAtom } from '../stores/authAtom'
 import { useAtom } from 'jotai'
-import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
+import { FiMail, FiLock } from "react-icons/fi"
+import './Login.css'
 
 const Login = () => {
     const [user, setUser] = useAtom(userAtom)
@@ -25,7 +26,6 @@ const Login = () => {
         setLoading(true)
 
         try {
-            // Iniciar sesión en Supabase
             const { data, error: signInError } = await supabase.auth.signInWithPassword({
                 email,
                 password
@@ -37,22 +37,15 @@ const Login = () => {
                 return
             }
 
-            // Log para ver qué información envía Supabase
-            console.log('Datos completos de Supabase:', data)
-            console.log('Usuario:', data.user)
-            console.log('User metadata:', data.user.user_metadata)
-
-            // Guardar datos del usuario en el atom
             const userData = {
                 id: data.user.id,
                 email: data.user.email,
                 name: data.user.user_metadata?.name || data.user.email
             }
-            setUser(userData)
-            console.log('Usuario guardado en atom:', userData)
 
-            // Redirigir al dashboard
+            setUser(userData)
             navigate('/dashboard')
+
         } catch (err) {
             setError(err.message || 'Error al iniciar sesión')
             setLoading(false)
@@ -60,31 +53,73 @@ const Login = () => {
     }
 
     return (
-        <>
-            <h2>Iniciar Sesión</h2>
-            {error && <p style={{ color: 'red' }}>{error}</p>}
-            <form onSubmit={handleLogin}>
-                <label htmlFor="email">Email</label>
-                <input 
-                    type="email" 
-                    id="email" 
-                    value={email} 
-                    onChange={(e) => setEmail(e.target.value)}
-                    required 
-                />
-                <label htmlFor="password">Contraseña</label>
-                <input 
-                    type="password" 
-                    id="password" 
-                    value={password} 
-                    onChange={(e) => setPassword(e.target.value)}
-                    required 
-                />
-                <button type="submit" disabled={loading}>
-                    {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+        <div className="login-container">
+
+            <div className="login-card">
+
+                <h2>Bienvenido de nuevo</h2>
+                <p className="subtitle">Inicia sesión en tu cuenta para continuar</p>
+
+                {error && <p className="error">{error}</p>}
+
+                <form onSubmit={handleLogin}>
+
+                    <label>Correo electrónico</label>
+
+                    <div className="input-group">
+                        <FiMail className="input-icon"/>
+                        <input
+                            type="email"
+                            placeholder="tu@email.com"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                        />
+                    </div>
+
+                    <label>Contraseña</label>
+                    <div className="input-group">
+                        <FiLock className="input-icon"/>
+                        <input
+                            type="password"
+                            placeholder="••••••••"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                        />
+                    </div>
+
+                    <button type="submit" disabled={loading}>
+                        {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+                    </button>
+
+                </form>
+
+                <div className="divider">
+                    <span>O CONTINÚA CON</span>
+                </div>
+
+                <button className="google-login">
+                    <svg className="google-icon" 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    viewBox="0 0 48 48"
+                    >
+                        <path fill="#EA4335" d="M24 9.5c3.54 0 6.32 1.53 7.77 2.82l5.73-5.73C33.86 3.5 29.3 1.5 24 1.5 14.64 1.5 6.73 7.48 3.46 15.96l6.84 5.32C12.08 14.13 17.56 9.5 24 9.5z"/>
+                        <path fill="#4285F4" d="M46.1 24.5c0-1.63-.15-3.2-.43-4.7H24v9h12.4c-.54 2.9-2.18 5.36-4.66 7.02l7.18 5.59C43.98 37.07 46.1 31.32 46.1 24.5z"/>
+                        <path fill="#FBBC05" d="M10.3 28.68A14.5 14.5 0 0 1 9.5 24c0-1.63.28-3.2.8-4.68l-6.84-5.32A22.48 22.48 0 0 0 1.5 24c0 3.64.87 7.07 2.42 10.04l6.38-5.36z"/>
+                        <path fill="#34A853" d="M24 46.5c6.48 0 11.93-2.14 15.9-5.82l-7.18-5.59c-2 1.35-4.56 2.16-8.72 2.16-6.44 0-11.92-4.63-13.7-10.78l-6.38 5.36C6.73 40.52 14.64 46.5 24 46.5z"/>
+                    </svg>
+
+                    Google
                 </button>
-            </form>
-        </>
+
+                <p className="register-text">
+                    ¿No tienes cuenta? <a href="/register">Regístrate</a>
+                </p>
+
+            </div>
+
+        </div>
     )
 }
 
