@@ -1,9 +1,89 @@
-import React from "react";
+import { useEffect, useRef, useState } from "react";
 import "./Home.css";
 import { useNavigate } from "react-router-dom";
 
 const Home = () => {
+    const stepsRef = useRef(null);
     const navigate = useNavigate();
+
+    useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("animate");
+          }
+        });
+      },
+      { threshold: 0.3 } // se activa cuando 30% es visible
+    );
+
+    if (stepsRef.current) {
+      observer.observe(stepsRef.current);
+    }
+
+    return () => {
+      if (stepsRef.current) {
+        observer.unobserve(stepsRef.current);
+      }
+    };
+  }, []);
+
+  const [stats, setStats] = useState({
+    time: 0,
+    questions: 0,
+    free: 0,
+    users: 0,
+  });
+
+  const statsRef = useRef(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          animateNumbers();
+        }
+      },
+      { threshold: 0.5 }
+    );
+
+    if (statsRef.current) {
+      observer.observe(statsRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+  const animateNumbers = () => {
+  const duration = 1500;
+  const start = performance.now();
+
+  const endValues = {
+    time: 2,
+    questions: 12,
+    free: 100,
+    users: 0,
+  };
+
+  const animate = (now) => {
+    const progress = Math.min((now - start) / duration, 1);
+
+    setStats({
+      time: Math.floor(progress * endValues.time),
+      questions: Math.floor(progress * endValues.questions),
+      free: Math.floor(progress * endValues.free),
+      users: Math.floor(progress * endValues.users),
+    });
+
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    }
+  };
+
+  requestAnimationFrame(animate);
+};
+
   return (
     <div className="home">
 
@@ -52,10 +132,10 @@ const Home = () => {
         <div className="hero-buttons">
 
           <button
-            className="primary-btn"
+            className="click-btn btn-style500"
             onClick={() => navigate("/create-survey")}
             >
-            Crear mi primera encuesta →
+            Crear mi primera encuesta 
           </button>
 
           <button className="secondary-btn">
@@ -70,7 +150,9 @@ const Home = () => {
 
     <section className="features">
 
-    <h2>Todo lo que necesitas, nada que no</h2>
+    <h2 className="masked-text">
+      Todo lo que necesitas, nada que no
+    </h2>
 
     <p className="features-subtitle">
         Diseñado para la simplicidad y velocidad. Crea encuestas profesionales sin la complejidad.
@@ -111,7 +193,8 @@ const Home = () => {
 
     {/* HOW IT WORKS */}
 
-    <section className="steps">
+ 
+      <section className="steps" ref={stepsRef}>
 
     <h2>Así de simple</h2>
     <p className="steps-subtitle">
@@ -148,34 +231,34 @@ const Home = () => {
         </div>
 
     </div>
-
     </section>
+
 
 
     {/* STATS */}
 
-    <section className="stats">
+    <section className="stats" ref={statsRef}>
 
     <div className="stats-grid">
 
         <div className="stat-item">
-        <h2>2min</h2>
-        <p>Tiempo promedio de creación</p>
+          <h2>{stats.time}min</h2>
+          <p>Tiempo promedio de creación</p>
         </div>
 
         <div className="stat-item">
-        <h2>12</h2>
-        <p>Preguntas máximas</p>
+          <h2>{stats.questions}</h2>
+          <p>Preguntas máximas</p>
         </div>
 
         <div className="stat-item">
-        <h2>100%</h2>
-        <p>Gratuito</p>
+          <h2>{stats.free}%</h2>
+          <p>Gratuito</p>
         </div>
 
         <div className="stat-item">
-        <h2>0</h2>
-        <p>Registros requeridos para responder</p>
+          <h2>{stats.users}</h2>
+          <p>Registros requeridos para responder</p>
         </div>
 
     </div>
@@ -190,7 +273,13 @@ const Home = () => {
         ⏱ Próximamente - V2
     </div>
 
-    <h2>Potenciado por IA</h2>
+    <h2 className="ai-title">
+      {"Potenciado por IA".split("").map((char, index) => (
+        <span key={index} className="letter">
+          {char === " " ? "\u00A0" : char}
+        </span>
+      ))}
+    </h2>
 
     <div className="ai-grid">
 

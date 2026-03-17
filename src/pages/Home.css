@@ -120,16 +120,34 @@
   font-size:14px;
 }
 
-.arrow-btn{
-  background:#a6a4d8;
-  border:none;
-  padding:0 18px;
-  color:white;
-  font-size:20px;
-  border-radius:0 10px 10px 0;
-  cursor:pointer;
+.arrow-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   height:42px;
   margin-top: 6px;
+  width: 50px;
+  font-weight: bold;
+  padding: 10px 18px;
+  border-radius:0 10px 10px 0;
+  font-size: 15px;
+  cursor: pointer;
+
+  /* ESTILO 501 */
+  background-image: linear-gradient(to right, #716eef 0%, #f3e1f7 51%, #716eef 100%);
+  background-size: 200% auto;
+  background-position: left top;
+
+  border: none;
+  color: #464646;
+
+  transition: background-position 0.4s ease, color 0.2s ease !important;
+}
+
+.arrow-btn:hover {
+  background-position: right bottom;
+  color: #000;
 }
 
 
@@ -153,6 +171,44 @@
   font-size: 14px;
 }
 
+.click-btn {
+  display: flex;
+  width: 240px;
+  height: 55px;
+  justify-content: center;
+  align-items: center;
+  margin: 0rem;
+  border: 1px solid;
+  border-radius: 8px;
+  font-size: 16px;
+  text-decoration: none;
+  transition: all 0.35s;
+  cursor: pointer;
+  background:#ffffff;
+}
+
+/* ESTILO 500 */
+.btn-style500 {
+  border-color: #716eef;
+  color: #716eef;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-style500:hover {
+  color: #fff;
+  transition-delay: 0.2s;
+  animation: ani500 0.6s forwards;
+  background: radial-gradient(circle, #716eef 0.2em, transparent 0.3em) 6em 6em/1em 1em,
+              radial-gradient(circle, #716eef 0.2em, transparent 0.3em) 0 0/1em 1em;
+}
+
+@keyframes ani500 {
+  100% {
+    background-size: 2.375em 2.375em, 0.1em 0.1em;
+  }
+}
+
 .secondary-btn{
   background:#F8F8F8;
   border:1px solid #ddd; 
@@ -161,6 +217,8 @@
   cursor:pointer;
   color: #444;
   font-size: 14px;
+  width: 240px;
+  height: 55px;
 }
 
 .secondary-btn:hover{
@@ -175,10 +233,35 @@
   padding:120px 20px;
 }
 
-.features h2{
-  font-size:36px;
-  font-weight:700;
-  margin-bottom:15px;
+.masked-text {
+  font-size: 36px; /* ajustado a tu diseño */
+  font-weight: 800;
+
+  color: transparent;
+
+  background-image: url('https://images.unsplash.com/photo-1732535725600-f805d8b33c9c?q=80&w=1470&auto=format&fit=crop');
+  background-size: 200%;
+  background-position: 0 50%;
+
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+
+  animation: animate-background 6s infinite alternate linear;
+}
+
+@keyframes animate-background {
+  0% {
+    background-position: 0 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+
+.features h2.masked-text {
+  font-size: 50px;
+  margin-bottom: 15px;
 }
 
 .features-subtitle{
@@ -231,6 +314,43 @@
 }
 
 /* STEPS SECTION */
+
+/* estado inicial */
+.step-number {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+/* 👇 SOLO cuando aparece en pantalla */
+.steps.animate .step-card:nth-child(1) .step-number {
+  animation: fadeUp 0.6s ease forwards;
+  animation-delay: 0.2s;
+}
+
+.steps.animate .step-card:nth-child(2) .step-number {
+  animation: fadeUp 0.6s ease forwards;
+  animation-delay: 0.5s;
+}
+
+.steps.animate .step-card:nth-child(3) .step-number {
+  animation: fadeUp 0.6s ease forwards;
+  animation-delay: 0.8s;
+}
+
+/* animación */
+@keyframes fadeUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  70% {
+    transform: translateY(-5px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
 .steps{
   text-align:center;
@@ -333,6 +453,28 @@
   margin-bottom:20px;
 }
 
+.ai-title {
+  font-size: 40px;
+  font-weight: 800;
+  text-align: center;
+}
+
+/* cada letra */
+.letter {
+  display: inline-block;
+  transition: transform 0.2s ease, color 0.2s ease;
+  cursor: pointer;
+}
+
+.letter:hover {
+  transform: scale(1.4);
+  color: #4b48a7;
+}
+
+.letter:hover + .letter {
+  transform: scale(1.2);
+}
+
 .ai-section h2{
   font-size:36px;
   margin-bottom:60px;
@@ -416,4 +558,3 @@
 .cta-btn:hover{
   background:#3f3c96;
 }
-  
