@@ -110,6 +110,7 @@ button:hover{
     position:relative;
     display:flex;
     align-items:center;
+    margin-bottom:18px;
 }
 
 .input-icon{
@@ -118,12 +119,15 @@ button:hover{
     top:50%;
     transform:translateY(-50%);
     color:#6b7280;
+    width:18px;
+    height:18px;
+    pointer-events:none;
 }
 
 .input-group input{
     width:100%;
     padding:12px 12px 12px 38px;
-    margin-bottom:18px;
+    margin-bottom:0;
     border:1px solid #ddd;
     border-radius:8px;
     font-size:14px;

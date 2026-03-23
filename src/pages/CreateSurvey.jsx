@@ -94,18 +94,23 @@ const CreateSurvey = () => {
         ) : (
           questions.map((q) => (
             <div key={q.id} className="question-container">
+              <div className="question-toolbar">
+                <span className="question-chip">Pregunta</span>
+
+                <button
+                  type="button"
+                  className="delete-btn"
+                  onClick={() => handleRemoveQuestion(q.id)}
+                >
+                  Eliminar
+                </button>
+              </div>
+
               <Question
                 id={q.id}
                 type={q.type}
                 onChange={handleQuestionChange}
               />
-
-              <button
-                className="delete-btn"
-                onClick={() => handleRemoveQuestion(q.id)}
-              >
-                Eliminar
-              </button>
             </div>
           ))
         )}

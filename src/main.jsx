@@ -8,6 +8,7 @@ import Register from "./pages/Register.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import Login from "./pages/Login.jsx";
 import CreateSurvey from "./pages/CreateSurvey.jsx";
+import SurveyAccess from "./pages/SurveyAccess.jsx";
 
 const router = createBrowserRouter([
   {
@@ -20,6 +21,8 @@ const router = createBrowserRouter([
       { path: "/dashboard", element: <Dashboard /> },
       { path: "/login", element: <Login /> },
       { path: "/create-survey", element: <CreateSurvey /> },
+      { path: "/survey", element: <SurveyAccess /> },
+      { path: "/survey/:surveyCode", element: <SurveyAccess /> },
     ],
   },
 ]);
