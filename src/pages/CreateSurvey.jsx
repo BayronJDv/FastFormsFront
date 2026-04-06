@@ -1,12 +1,21 @@
 import React, { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Question from "../components/Question";
+import { createSurvey } from "../lib/apiClient";
 import "./CreateSurvey.css";
+
+const QUESTION_TYPE_MAP = {
+  open: "open",
+  unique_choice: "multiple_choice",
+  yes_no: "yes_no",
+};
 
 const CreateSurvey = () => {
   const navigate = useNavigate();
+  const [title, setTitle] = useState("");
   const [questions, setQuestions] = useState([]);
   const [answersData, setAnswersData] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const questionTypes = [
     { id: "open", label: "Pregunta Abierta" },
@@ -33,16 +42,41 @@ const CreateSurvey = () => {
     });
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (!title.trim()) return alert("El título de la encuesta es obligatorio");
+    if (questions.length === 0) return alert("Añade al menos una pregunta");
+
     const values = Object.values(answersData);
     const hasEmptyStatements = values.some((q) => !q.statement.trim());
-
-    if (questions.length === 0) return alert("Añade al menos una pregunta");
     if (hasEmptyStatements)
       return alert("Todas las preguntas deben tener un enunciado");
 
-    console.log("Payload Final:", answersData);
-    alert("Encuesta enviada con éxito");
+    const payload = {
+      title: title.trim(),
+      questions: questions.map((q, index) => {
+        const data = answersData[q.id];
+        const mapped = {
+          content: data.statement,
+          question_type: QUESTION_TYPE_MAP[data.type],
+          position: index + 1,
+        };
+        if (data.type === "unique_choice" && data.options) {
+          mapped.options = data.options;
+        }
+        return mapped;
+      }),
+    };
+
+    setIsSubmitting(true);
+    try {
+      const result = await createSurvey(payload);
+      alert(`Encuesta creada. Código: ${result.unique_code}`);
+      navigate("/dashboard");
+    } catch (err) {
+      alert(`Error al crear la encuesta: ${err.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -61,8 +95,8 @@ const CreateSurvey = () => {
         <div className="header-buttons">
           <button className="draft-btn">Guardar borrador</button>
 
-          <button className="publish-btn" onClick={handleSubmit}>
-            Publicar
+          <button className="publish-btn" onClick={handleSubmit} disabled={isSubmitting}>
+            {isSubmitting ? "Publicando..." : "Publicar"}
           </button>
         </div>
 
@@ -76,6 +110,8 @@ const CreateSurvey = () => {
         <input
           type="text"
           placeholder="Ej: Encuesta de Satisfacción del Cliente"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
         />
 
         <label>Descripción (opcional)</label>
