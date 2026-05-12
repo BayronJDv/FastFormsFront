@@ -55,8 +55,10 @@ describe("SurveyAccess", () => {
     renderSurveyAccess("/survey/CERRADA1");
 
     expect(await screen.findByRole("heading", { name: /encuesta cerrada/i })).toBeInTheDocument();
-    expect(screen.getByText(/ya no está disponible para recibir respuestas/i)).toBeInTheDocument();
+    expect(screen.getByText(/ya no acepta más respuestas/i)).toBeInTheDocument();
     expect(screen.getByText("Encuesta cerrada de prueba")).toBeInTheDocument();
+    // No se renderiza el formulario de llenado
+    expect(screen.queryByRole("button", { name: /enviar respuestas/i })).not.toBeInTheDocument();
   });
 
   it("HU2: arma el formulario en una sola página y pide confirmación antes de enviar", async () => {

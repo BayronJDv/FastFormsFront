@@ -53,3 +53,19 @@ export function listSurveys() {
 export function publishSurvey(surveyId) {
   return request(`/surveys/${surveyId}/publish`, { method: "PATCH" });
 }
+
+/**
+ * Cierra una encuesta de forma permanente (US-09).
+ * @param {number|string} surveyId
+ */
+export function closeSurvey(surveyId) {
+  return request(`/surveys/${surveyId}/close`, { method: "PATCH" });
+}
+
+/**
+ * Obtiene los resultados agregados de una encuesta (US-10).
+ * @param {number|string} surveyId
+ */
+export function getSurveyResults(surveyId) {
+  return request(`/surveys/${surveyId}/results`, { method: "GET" });
+}

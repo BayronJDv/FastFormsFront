@@ -220,7 +220,7 @@ const SurveyAccess = () => {
         {viewState === "survey_closed" ? (
           <section className="survey-state-card">
             <h2>Encuesta cerrada</h2>
-            <p>Esta encuesta ya no está disponible para recibir respuestas.</p>
+            <p>Esta encuesta ya no acepta más respuestas.</p>
             {survey?.title ? <span className="survey-state-meta">{survey.title}</span> : null}
           </section>
         ) : null}
