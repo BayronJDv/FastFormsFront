@@ -12,7 +12,8 @@ const STATUS_META = {
   closed: { label: "Cerrada", className: "status-badge status-closed" },
 };
 
-const SHARE_BASE = "http://localhost:5173";
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL+"api/v1/" || "http://localhost:8000/api/v1";
 
 const Dashboard = () => {
   const [user] = useAtom(userAtom);
@@ -55,7 +56,7 @@ const Dashboard = () => {
   }, []);
 
   const handleCopyLink = async (survey) => {
-    const link = `${SHARE_BASE}/survey/${survey.unique_code}`;
+    const link = `${API_BASE_URL}survey/${survey.unique_code}`;
     try {
       await navigator.clipboard.writeText(link);
     } catch {
