@@ -31,14 +31,14 @@
 .site-title {
   font-size: 20px;
   font-weight: 600;
+  margin: 0; 
 }
 
 /* centro */
 
 .header-center {
-  flex: 1;
   display: flex;
-  justify-content: center;
+  gap: 40px;
 }
 
 .header-center a {
@@ -78,10 +78,15 @@
   gap: 20px;
 }
 
+.header-right > * {
+  align-self: center; 
+}
+
 .login-link {
   text-decoration: none;
   color: #111827;
   font-weight: 500;
+  height: 30px;
 }
 
 .register-btn {
@@ -105,10 +110,9 @@
   border-radius: 10px;
   cursor: pointer;
 }
-
 .user-name {
   font-weight: 600;
   color: #1f2937;
-  font-size: 16px;
+  font-size: 15px;
   margin-right: 8px;
 }
