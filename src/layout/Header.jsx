@@ -29,8 +29,11 @@ const Header = () => {
       </Link>
 
       <nav className="header-center">
-        <a href="#">Características</a>
-        <a href="#">Cómo funciona</a>
+        {user && (
+          <Link to="/dashboard" className="dashboard-link">
+            Dashboard
+          </Link>
+        )}
       </nav>
 
       <div className="header-right">

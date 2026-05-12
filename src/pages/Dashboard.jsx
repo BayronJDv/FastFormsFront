@@ -12,7 +12,7 @@ const STATUS_META = {
   closed: { label: "Cerrada", className: "status-badge status-closed" },
 };
 
-const SHARE_BASE = "https://fastforms.app/c";
+const SHARE_BASE = "http://localhost:5173";
 
 const Dashboard = () => {
   const [user] = useAtom(userAtom);
@@ -27,6 +27,11 @@ const Dashboard = () => {
   const [copiedCode, setCopiedCode] = useState(null);
 
   useEffect(() => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
     let ignore = false;
 
     const load = async () => {
@@ -50,7 +55,7 @@ const Dashboard = () => {
   }, []);
 
   const handleCopyLink = async (survey) => {
-    const link = `${SHARE_BASE}/${survey.unique_code}`;
+    const link = `${SHARE_BASE}/survey/${survey.unique_code}`;
     try {
       await navigator.clipboard.writeText(link);
     } catch {
