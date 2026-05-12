@@ -5,7 +5,7 @@ import './Footer.css'
 const Footer = () => {
   return (
     <footer className="site-footer">
-      <p>© 2023 FastForms. All rights reserved.</p>
+      <p>© 2026 FastForms. All rights reserved.</p>
     </footer>
   )
 }
