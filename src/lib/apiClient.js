@@ -38,3 +38,18 @@ export function createSurvey(surveyData) {
     body: JSON.stringify(surveyData),
   });
 }
+
+/**
+ * Lista las encuestas del usuario autenticado (US-02).
+ */
+export function listSurveys() {
+  return request("/surveys/", { method: "GET" });
+}
+
+/**
+ * Publica una encuesta: cambia su estado de borrador a "Publicada" (US-04).
+ * @param {number|string} surveyId
+ */
+export function publishSurvey(surveyId) {
+  return request(`/surveys/${surveyId}/publish`, { method: "PATCH" });
+}
