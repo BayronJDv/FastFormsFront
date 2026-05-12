@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useAtom } from "jotai";
 import { userAtom } from "../stores/authAtom";
 import { useNavigate } from "react-router-dom";
-import { listSurveys } from "../lib/apiClient";
+import ConfirmModal from "../components/ConfirmModal";
+import { listSurveys, closeSurvey } from "../lib/apiClient";
 import "./Dashboard.css";
 
 const STATUS_META = {
@@ -11,6 +12,8 @@ const STATUS_META = {
   closed: { label: "Cerrada", className: "status-badge status-closed" },
 };
 
+const SHARE_BASE = "https://fastforms.app/c";
+
 const Dashboard = () => {
   const [user] = useAtom(userAtom);
   const navigate = useNavigate();
@@ -18,6 +21,10 @@ const Dashboard = () => {
   const [surveys, setSurveys] = useState([]);
   const [loadState, setLoadState] = useState("loading"); // loading | ready | error
   const [errorMessage, setErrorMessage] = useState("");
+
+  const [surveyToClose, setSurveyToClose] = useState(null);
+  const [closing, setClosing] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(null);
 
   useEffect(() => {
     let ignore = false;
@@ -41,6 +48,39 @@ const Dashboard = () => {
       ignore = true;
     };
   }, []);
+
+  const handleCopyLink = async (survey) => {
+    const link = `${SHARE_BASE}/${survey.unique_code}`;
+    try {
+      await navigator.clipboard.writeText(link);
+    } catch {
+      /* clipboard no disponible: igual mostramos el feedback */
+    }
+    setCopiedCode(survey.unique_code);
+    setTimeout(() => {
+      setCopiedCode((current) => (current === survey.unique_code ? null : current));
+    }, 2000);
+  };
+
+  const confirmClose = async () => {
+    if (!surveyToClose) return;
+    setClosing(true);
+    try {
+      const updated = await closeSurvey(surveyToClose.id);
+      setSurveys((current) =>
+        current.map((survey) =>
+          survey.id === surveyToClose.id
+            ? { ...survey, ...updated, status: "closed" }
+            : survey
+        )
+      );
+      setSurveyToClose(null);
+    } catch (error) {
+      alert(`No fue posible cerrar la encuesta: ${error.message}`);
+    } finally {
+      setClosing(false);
+    }
+  };
 
   return (
     <div className="dashboard-page">
@@ -72,6 +112,7 @@ const Dashboard = () => {
             const meta =
               STATUS_META[survey.status] ?? { label: survey.status, className: "status-badge" };
             const isDraft = survey.status === "draft";
+            const isActive = survey.status === "active";
 
             return (
               <li key={survey.id} className="dashboard-item">
@@ -95,17 +136,45 @@ const Dashboard = () => {
                   ) : (
                     <button
                       className="dashboard-action-btn"
-                      onClick={() => navigate(`/survey/${survey.unique_code}/results`)}
+                      onClick={() => navigate(`/surveys/${survey.id}/results`)}
                     >
                       Ver resultados
                     </button>
                   )}
+
+                  {isActive ? (
+                    <>
+                      <button
+                        className="dashboard-action-btn"
+                        onClick={() => handleCopyLink(survey)}
+                      >
+                        {copiedCode === survey.unique_code ? "¡Copiado!" : "Copiar enlace"}
+                      </button>
+                      <button
+                        className="dashboard-action-btn dashboard-action-danger"
+                        onClick={() => setSurveyToClose(survey)}
+                      >
+                        Cerrar encuesta
+                      </button>
+                    </>
+                  ) : null}
                 </div>
               </li>
             );
           })}
         </ul>
       ) : null}
+
+      <ConfirmModal
+        open={Boolean(surveyToClose)}
+        title="Cerrar encuesta"
+        message="¿Estás seguro? Esta acción impedirá nuevas respuestas permanentemente."
+        confirmLabel="Sí, cerrar"
+        cancelLabel="Cancelar"
+        busy={closing}
+        onConfirm={confirmClose}
+        onCancel={() => setSurveyToClose(null)}
+      />
     </div>
   );
 };

@@ -1,5 +1,45 @@
 # Changelog
 
+## Sprint 3 — Análisis y Cierre
+
+### US-10 · Resultados: Visualización Core
+- Nueva página `SurveyResults` (`/surveys/:surveyId/results`) que consume
+  `GET /surveys/{id}/results`.
+- Nuevo componente `DonutChart` (gráfico circular en SVG, sin dependencias
+  extra) para preguntas tipo Test y Sí/No, con leyenda de conteo y porcentaje.
+- Feed de texto scrolleable para preguntas abiertas.
+- Estado vacío: *"Aún no hay respuestas para esta encuesta"*. El acceso lo
+  protege el backend (solo el creador).
+- Nuevos métodos `getSurveyResults(id)` y `closeSurvey(id)` en `apiClient`.
+- El botón "Ver resultados" del panel ahora navega a la página de resultados
+  por id.
+
+> Nota: el proyecto no traía una librería de gráficos y no se puede regenerar
+> el lockfile de pnpm aquí, así que el gráfico circular se implementó con SVG
+> nativo (pie/donut real).
+
+### US-09 · Gestión: Confirmación de Cierre
+- En `Dashboard`, las encuestas en estado **Activa** muestran un botón
+  "Cerrar encuesta" que abre un modal de confirmación: *"¿Estás seguro? Esta
+  acción impedirá nuevas respuestas permanentemente"*. Al confirmar hace
+  `PATCH /surveys/{id}/close`; tras cerrarse, el botón desaparece y el badge
+  pasa a **Cerrada**.
+
+### US-06 · Acceso: Estado de Encuesta Cerrada
+- `SurveyAccess` muestra *"Esta encuesta ya no acepta más respuestas"* cuando el
+  estado es cerrada y no renderiza el formulario de llenado (reutiliza la
+  validación de código existente, que ya devuelve el estado).
+
+### US-11 · Distribución: Share Link
+- En `Dashboard`, las encuestas en estado **Activa** muestran un botón
+  "Copiar enlace" que copia `https://fastforms.app/c/<codigo>` con
+  `navigator.clipboard.writeText()` y cambia el texto a "¡Copiado!" durante 2
+  segundos.
+
+### Tests
+- `src/pages/SurveyAccess.test.jsx` actualizado al nuevo copy de encuesta
+  cerrada y verifica que no se renderiza el formulario.
+
 ## Sprint 2 — Publicación y Respuesta
 
 ### US-04 · Publicación e Inmutabilidad
@@ -32,5 +72,5 @@
   encuesta"* sin volver a cargar el formulario.
 
 ### Tests
-- `src/pages/SurveyAccess.test.jsx` actualizado: cubre el modal de confirmación
-  y el bloqueo de reenvío por `LocalStorage`.
+- `src/pages/SurveyAccess.test.jsx` cubre el modal de confirmación y el bloqueo
+  de reenvío por `LocalStorage`.
