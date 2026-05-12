@@ -12,7 +12,7 @@ const STATUS_META = {
   closed: { label: "Cerrada", className: "status-badge status-closed" },
 };
 
-const API_BASE_URL = import.meta.env.VITE_API_URL+"api/v1/" 
+const API_BASE_URL = "https://fast-forms-front.vercel.app/"
 
 const Dashboard = () => {
   const [user] = useAtom(userAtom);
