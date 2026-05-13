@@ -132,17 +132,34 @@
 .survey-option-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 14px;
   border: 1px solid #e5e7eb;
   border-radius: 10px;
-  padding: 12px 14px;
+  padding: 14px 16px;
   background: white;
   color: #374151;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.survey-option-item:hover {
+  border-color: #c7d2fe;
+  background: #f8fafc;
+}
+
+.survey-option-item-selected {
+  border-color: #4f46e5;
+  background: #eef2ff;
+  color: #111827;
+  font-weight: 500;
 }
 
 .survey-option-item input {
-  width: auto;
-  margin: 0;
+  width: 18px;
+  height: 18px;
+  margin: 0 14px 0 0; /* Margen a la derecha para forzar la separación */
+  cursor: pointer;
 }
 
 .survey-field-error,

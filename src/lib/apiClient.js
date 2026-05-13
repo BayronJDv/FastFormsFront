@@ -1,7 +1,7 @@
 import { getToken } from "./gettoken";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
+  import.meta.env.VITE_API_URL+"api/v1/" || "http://localhost:8000/api/v1";
 
 async function request(endpoint, options = {}) {
   const token = await getToken();
@@ -33,7 +33,7 @@ async function request(endpoint, options = {}) {
  * @param {{ title: string, questions: Array }} surveyData
  */
 export function createSurvey(surveyData) {
-  return request("/surveys/", {
+  return request("surveys/", {
     method: "POST",
     body: JSON.stringify(surveyData),
   });
@@ -43,7 +43,7 @@ export function createSurvey(surveyData) {
  * Lista las encuestas del usuario autenticado (US-02).
  */
 export function listSurveys() {
-  return request("/surveys/", { method: "GET" });
+  return request("surveys/", { method: "GET" });
 }
 
 /**
@@ -51,7 +51,7 @@ export function listSurveys() {
  * @param {number|string} surveyId
  */
 export function publishSurvey(surveyId) {
-  return request(`/surveys/${surveyId}/publish`, { method: "PATCH" });
+  return request(`surveys/${surveyId}/publish`, { method: "PATCH" });
 }
 
 /**
@@ -59,7 +59,7 @@ export function publishSurvey(surveyId) {
  * @param {number|string} surveyId
  */
 export function closeSurvey(surveyId) {
-  return request(`/surveys/${surveyId}/close`, { method: "PATCH" });
+  return request(`surveys/${surveyId}/close`, { method: "PATCH" });
 }
 
 /**
@@ -67,5 +67,5 @@ export function closeSurvey(surveyId) {
  * @param {number|string} surveyId
  */
 export function getSurveyResults(surveyId) {
-  return request(`/surveys/${surveyId}/results`, { method: "GET" });
+  return request(`surveys/${surveyId}/results`, { method: "GET" });
 }

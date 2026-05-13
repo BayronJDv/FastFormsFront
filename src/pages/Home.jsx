@@ -96,7 +96,6 @@ const Home = () => {
   return (
     <div className="home">
       <section className="hero">
-        <div className="badge">✨ Más rápido que Google Forms</div>
 
         <h1>
           Crea encuestas en minutos,
@@ -140,8 +139,6 @@ const Home = () => {
           >
             Crear mi primera encuesta
           </button>
-
-          <button className="secondary-btn">Ver demo del dashboard</button>
         </div>
       </section>
 

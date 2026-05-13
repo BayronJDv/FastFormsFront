@@ -1,5 +1,8 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAtom } from "jotai";
+import { userAtom } from "../stores/authAtom";
+import toast from "react-hot-toast";
 import Question from "../components/Question";
 import ConfirmModal from "../components/ConfirmModal";
 import { createSurvey, publishSurvey } from "../lib/apiClient";
@@ -12,7 +15,15 @@ const QUESTION_TYPE_MAP = {
 };
 
 const CreateSurvey = () => {
+  const [user] = useAtom(userAtom);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+    }
+  }, [user, navigate]);
+
   const [title, setTitle] = useState("");
   const [questions, setQuestions] = useState([]);
   const [answersData, setAnswersData] = useState({});
@@ -104,11 +115,11 @@ const CreateSurvey = () => {
       const created = await createSurvey(buildPayload());
       const published = await publishSurvey(created.id);
       setShowPublishModal(false);
-      alert(`Encuesta publicada. Código: ${published?.unique_code ?? created.unique_code}`);
+      toast.success(`Encuesta publicada. Código: ${published?.unique_code ?? created.unique_code}`);
       navigate("/dashboard");
     } catch (err) {
       setShowPublishModal(false);
-      alert(`Error al publicar la encuesta: ${err.message}`);
+      toast.error(`Error al publicar la encuesta: ${err.message}`);
     } finally {
       setIsSubmitting(false);
     }
