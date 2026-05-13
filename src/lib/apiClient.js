@@ -103,6 +103,7 @@ export async function exportSurveyResultsCsv(surveyId, filename = `encuesta_${su
   anchor.click();
   document.body.removeChild(anchor);
   URL.revokeObjectURL(url);
+}
 // ---------- Borradores ----------
 
 /**
