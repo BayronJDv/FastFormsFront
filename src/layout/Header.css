@@ -116,3 +116,83 @@
   font-size: 15px;
   margin-right: 8px;
 }
+
+/* ========== RESPONSIVE ========== */
+
+@media (max-width: 768px) {
+  .site-header {
+    padding: 12px 20px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .site-title {
+    font-size: 17px;
+  }
+
+  .logo-icon {
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
+  }
+
+  .header-center {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .dashboard-link {
+    min-width: unset;
+    width: 100%;
+    font-size: 15px;
+    padding: 10px 16px;
+  }
+
+  .header-right {
+    gap: 10px;
+  }
+
+  .register-btn {
+    padding: 8px 14px;
+    font-size: 14px;
+  }
+
+  .logout-btn {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .user-name {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .site-header {
+    padding: 10px 14px;
+  }
+
+  .header-right {
+    gap: 6px;
+  }
+
+  .login-link {
+    font-size: 13px;
+  }
+
+  .register-btn {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+
+  .logout-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .dashboard-link {
+    font-size: 13px;
+    padding: 8px 12px;
+  }
+}

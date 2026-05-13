@@ -132,3 +132,37 @@ button:hover{
     border-radius:8px;
     font-size:14px;
 }
+
+/* ========== RESPONSIVE ========== */
+
+@media (max-width: 768px) {
+  .login-container {
+    height: auto;
+    min-height: 80vh;
+    padding: 24px 16px;
+  }
+
+  .login-card {
+    width: 100%;
+    max-width: 400px;
+    padding: 28px 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-card {
+    padding: 24px 18px;
+  }
+
+  .login-card h2 {
+    font-size: 22px;
+  }
+
+  .subtitle {
+    font-size: 14px;
+  }
+
+  .login-card button {
+    min-height: 48px;
+  }
+}

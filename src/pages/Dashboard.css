@@ -128,6 +128,22 @@
   border-color: #fecaca;
 }
 
+@media (max-width: 768px) {
+  .dashboard-page {
+    padding: 24px 16px 40px;
+  }
+
+  .dashboard-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .dashboard-create-btn {
+    width: 100%;
+    text-align: center;
+  }
+}
+
 @media (max-width: 600px) {
   .dashboard-item {
     flex-direction: column;
@@ -141,5 +157,29 @@
   .dashboard-action-btn,
   .dashboard-create-btn {
     flex: 1;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-page {
+    padding: 16px 12px 32px;
+  }
+
+  .dashboard-header h1 {
+    font-size: 22px;
+  }
+
+  .dashboard-item {
+    padding: 14px 16px;
+  }
+
+  .dashboard-item-actions {
+    flex-direction: column;
+  }
+
+  .dashboard-action-btn {
+    width: 100%;
+    text-align: center;
+    min-height: 42px;
   }
 }

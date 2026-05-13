@@ -211,6 +211,18 @@
   cursor: pointer;
 }
 
+@media (max-width: 1024px) {
+  .survey-access-shell {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .survey-access-page {
+    padding: 24px 16px 40px;
+  }
+}
+
 @media (max-width: 640px) {
   .survey-access-header,
   .survey-question-label {
@@ -246,5 +258,41 @@
 
   .survey-option-item {
     min-height: 48px;
+  }
+}
+
+@media (max-width: 480px) {
+  .survey-access-page {
+    padding: 16px 12px 32px;
+  }
+
+  .survey-access-code {
+    font-size: 13px;
+  }
+
+  .survey-intro-card h1 {
+    font-size: 20px;
+  }
+
+  .survey-intro-card p {
+    font-size: 14px;
+  }
+
+  .survey-question-card {
+    padding: 14px;
+  }
+
+  .survey-question-label {
+    font-size: 14px;
+  }
+
+  .survey-option-item {
+    padding: 12px 14px;
+    font-size: 15px;
+    min-height: 44px;
+  }
+
+  .survey-answer-input {
+    font-size: 15px;
   }
 }

@@ -63,6 +63,16 @@
 }
 
 @media (max-width: 480px) {
+  .modal-overlay {
+    padding: 16px;
+    align-items: flex-end;
+  }
+
+  .modal-card {
+    padding: 24px 20px;
+    border-radius: 14px 14px 0 0;
+  }
+
   .modal-actions {
     flex-direction: column-reverse;
   }

@@ -11,7 +11,8 @@ const PALETTE = [
   "#6366f1",
 ];
 
-const DonutChart = ({ data = [], size = 184, thickness = 30 }) => {
+const DonutChart = ({ data = [], size: propSize, thickness = 30 }) => {
+  const size = propSize || (typeof window !== 'undefined' && window.innerWidth < 480 ? 140 : 184);
   const colored = data.map((entry, index) => ({
     ...entry,
     color: PALETTE[index % PALETTE.length],

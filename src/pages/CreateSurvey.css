@@ -192,3 +192,74 @@ textarea {
   color:#111827;
   background:none;
 }
+
+/* ========== RESPONSIVE ========== */
+
+@media (max-width: 768px) {
+  .survey-page {
+    padding: 20px 16px;
+  }
+
+  .survey-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .header-buttons {
+    width: 100%;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .header-buttons button {
+    width: 100%;
+    text-align: center;
+    min-height: 44px;
+  }
+
+  .question-buttons {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .add-question-btn {
+    width: 100%;
+    text-align: center;
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 480px) {
+  .survey-page {
+    padding: 16px 12px;
+  }
+
+  .card {
+    padding: 16px;
+  }
+
+  .card h3 {
+    font-size: 17px;
+  }
+
+  .question-container {
+    padding: 14px;
+  }
+
+  .question-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .delete-btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .empty-box {
+    padding: 20px 16px;
+    font-size: 14px;
+  }
+}

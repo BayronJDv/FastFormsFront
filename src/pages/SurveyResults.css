@@ -87,9 +87,55 @@
   line-height: 1.5;
 }
 
+@media (max-width: 768px) {
+  .results-page {
+    padding: 24px 16px 40px;
+  }
+
+  .results-header h1 {
+    font-size: 18px;
+  }
+}
+
 @media (max-width: 600px) {
   .results-card,
   .results-state {
     padding: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .results-page {
+    padding: 16px 12px 32px;
+  }
+
+  .results-header {
+    gap: 10px;
+  }
+
+  .results-header h1 {
+    font-size: 16px;
+    line-height: 1.3;
+  }
+
+  .results-card {
+    padding: 16px;
+  }
+
+  .results-card h3 {
+    font-size: 15px;
+  }
+
+  .results-summary {
+    font-size: 14px;
+  }
+
+  .results-text-feed {
+    max-height: 200px;
+  }
+
+  .results-text-feed li {
+    padding: 10px 12px;
+    font-size: 14px;
   }
 }

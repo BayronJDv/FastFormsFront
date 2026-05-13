@@ -159,3 +159,36 @@
   height: 18px;
   pointer-events: none;
 }
+
+/* ========== RESPONSIVE ========== */
+
+@media (max-width: 768px) {
+  .register-container {
+    padding: 24px 16px;
+    min-height: auto;
+  }
+
+  .register-card {
+    width: 100%;
+    max-width: 420px;
+    padding: 28px 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .register-card {
+    padding: 24px 18px;
+  }
+
+  .register-card h2 {
+    font-size: 22px;
+  }
+
+  .register-subtitle {
+    font-size: 14px;
+  }
+
+  .register-card button {
+    min-height: 48px;
+  }
+}
