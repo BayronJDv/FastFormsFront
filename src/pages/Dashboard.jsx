@@ -12,7 +12,7 @@ const STATUS_META = {
   closed: { label: "Cerrada", className: "status-badge status-closed" },
 };
 
-const API_BASE_URL = "https://fast-forms-front.vercel.app/"
+const API_BASE_URL = "https://fast-forms-front.vercel.app/";
 
 const Dashboard = () => {
   const [user] = useAtom(userAtom);
@@ -28,7 +28,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (!user) {
-      navigate('/login');
+      navigate("/login");
       return;
     }
 
@@ -43,7 +43,9 @@ const Dashboard = () => {
         setLoadState("ready");
       } catch (error) {
         if (ignore) return;
-        setErrorMessage(error.message || "No fue posible cargar tus encuestas.");
+        setErrorMessage(
+          error.message || "No fue posible cargar tus encuestas."
+        );
         setLoadState("error");
       }
     };
@@ -63,7 +65,9 @@ const Dashboard = () => {
     }
     setCopiedCode(survey.unique_code);
     setTimeout(() => {
-      setCopiedCode((current) => (current === survey.unique_code ? null : current));
+      setCopiedCode((current) =>
+        current === survey.unique_code ? null : current
+      );
     }, 2000);
   };
 
@@ -92,9 +96,14 @@ const Dashboard = () => {
       <div className="dashboard-header">
         <div>
           <h1>Mis encuestas</h1>
-          {user?.name ? <p className="dashboard-greeting">Hola, {user.name}</p> : null}
+          {user?.name ? (
+            <p className="dashboard-greeting">Hola, {user.name}</p>
+          ) : null}
         </div>
-        <button className="dashboard-create-btn" onClick={() => navigate("/create-survey")}>
+        <button
+          className="dashboard-create-btn"
+          onClick={() => navigate("/create-survey")}
+        >
           + Crear encuesta
         </button>
       </div>
@@ -108,14 +117,19 @@ const Dashboard = () => {
       ) : null}
 
       {loadState === "ready" && surveys.length === 0 ? (
-        <p className="dashboard-state">Aún no has creado encuestas. ¡Crea la primera!</p>
+        <p className="dashboard-state">
+          Aún no has creado encuestas. ¡Crea la primera!
+        </p>
       ) : null}
 
       {loadState === "ready" && surveys.length > 0 ? (
         <ul className="dashboard-list">
           {surveys.map((survey) => {
             const meta =
-              STATUS_META[survey.status] ?? { label: survey.status, className: "status-badge" };
+              STATUS_META[survey.status] ?? {
+                label: survey.status,
+                className: "status-badge",
+              };
             const isDraft = survey.status === "draft";
             const isActive = survey.status === "active";
 
@@ -124,7 +138,9 @@ const Dashboard = () => {
                 <div className="dashboard-item-main">
                   <span className="dashboard-item-title">{survey.title}</span>
                   {survey.unique_code ? (
-                    <span className="dashboard-item-code">Código: {survey.unique_code}</span>
+                    <span className="dashboard-item-code">
+                      Código: {survey.unique_code}
+                    </span>
                   ) : null}
                 </div>
 
@@ -134,14 +150,18 @@ const Dashboard = () => {
                   {isDraft ? (
                     <button
                       className="dashboard-action-btn"
-                      onClick={() => navigate("/create-survey")}
+                      onClick={() =>
+                        navigate(`/create-survey/${survey.id}`)
+                      }
                     >
                       Editar
                     </button>
                   ) : (
                     <button
                       className="dashboard-action-btn"
-                      onClick={() => navigate(`/surveys/${survey.id}/results`)}
+                      onClick={() =>
+                        navigate(`/surveys/${survey.id}/results`)
+                      }
                     >
                       Ver resultados
                     </button>
@@ -153,7 +173,9 @@ const Dashboard = () => {
                         className="dashboard-action-btn"
                         onClick={() => handleCopyLink(survey)}
                       >
-                        {copiedCode === survey.unique_code ? "¡Copiado!" : "Copiar enlace"}
+                        {copiedCode === survey.unique_code
+                          ? "¡Copiado!"
+                          : "Copiar enlace"}
                       </button>
                       <button
                         className="dashboard-action-btn dashboard-action-danger"
