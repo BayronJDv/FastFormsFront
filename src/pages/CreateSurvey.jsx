@@ -1,12 +1,11 @@
 import React, { useState, useCallback, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useAtom } from "jotai";
+import { userAtom } from "../stores/authAtom";
+import toast from "react-hot-toast";
 import Question from "../components/Question";
-import {
-  createSurvey,
-  saveDraft,
-  updateDraft,
-  getSurvey,
-} from "../lib/apiClient";
+import ConfirmModal from "../components/ConfirmModal";
+import { createSurvey, publishSurvey } from "../lib/apiClient";
 import "./CreateSurvey.css";
 
 const QUESTION_TYPE_MAP = {
@@ -23,14 +22,20 @@ const REVERSE_QUESTION_TYPE_MAP = {
 };
 
 const CreateSurvey = () => {
+  const [user] = useAtom(userAtom);
   const navigate = useNavigate();
-  const { draftId } = useParams();
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+    }
+  }, [user, navigate]);
+
   const [title, setTitle] = useState("");
   const [questions, setQuestions] = useState([]);
   const [answersData, setAnswersData] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSavingDraft, setIsSavingDraft] = useState(false);
-  const [isLoadingDraft, setIsLoadingDraft] = useState(Boolean(draftId));
+  const [showPublishModal, setShowPublishModal] = useState(false);
 
   const questionTypes = [
     { id: "open", label: "Pregunta Abierta" },
@@ -96,43 +101,72 @@ const CreateSurvey = () => {
     });
   };
 
-  // Construye el payload aceptado por el backend, tanto para publicar como para guardar borrador.
+  const isFormValid = () => {
+    if (!title.trim()) {
+      alert("El título de la encuesta es obligatorio");
+      return false;
+    }
+    if (questions.length === 0) {
+      alert("Añade al menos una pregunta");
+      return false;
+    }
+    const values = Object.values(answersData);
+    const hasEmptyStatements = values.some(
+      (q) => !q || !q.statement || !q.statement.trim()
+    );
+    if (hasEmptyStatements) {
+      alert("Todas las preguntas deben tener un enunciado");
+      return false;
+    }
+    return true;
+  };
+
   const buildPayload = () => ({
     title: title.trim(),
     questions: questions.map((q, index) => {
-      const data = answersData[q.id] || { statement: "", type: q.type };
+      const data = answersData[q.id];
       const mapped = {
-        content: data.statement || "",
+        content: data.statement,
         question_type: QUESTION_TYPE_MAP[data.type],
         position: index + 1,
       };
-      if (
-        data.type === "unique_choice" &&
-        Array.isArray(data.options) &&
-        data.options.length > 0
-      ) {
+      if (data.type === "unique_choice" && data.options) {
         mapped.options = data.options;
       }
       return mapped;
     }),
   });
 
-  const handleSubmit = async () => {
-    if (!title.trim()) return alert("El título de la encuesta es obligatorio");
-    if (questions.length === 0) return alert("Añade al menos una pregunta");
-
-    const values = Object.values(answersData);
-    const hasEmptyStatements = values.some((q) => !q.statement.trim());
-    if (hasEmptyStatements)
-      return alert("Todas las preguntas deben tener un enunciado");
-
+  const handleSaveDraft = async () => {
+    if (!isFormValid()) return;
     setIsSubmitting(true);
     try {
-      const result = await createSurvey(buildPayload());
-      alert(`Encuesta creada. Código: ${result.unique_code}`);
+      const created = await createSurvey(buildPayload());
+      alert(`Borrador guardado. Código: ${created.unique_code}`);
       navigate("/dashboard");
     } catch (err) {
-      alert(`Error al crear la encuesta: ${err.message}`);
+      alert(`Error al guardar el borrador: ${err.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handlePublishClick = () => {
+    if (!isFormValid()) return;
+    setShowPublishModal(true);
+  };
+
+  const confirmPublish = async () => {
+    setIsSubmitting(true);
+    try {
+      const created = await createSurvey(buildPayload());
+      const published = await publishSurvey(created.id);
+      setShowPublishModal(false);
+      toast.success(`Encuesta publicada. Código: ${published?.unique_code ?? created.unique_code}`);
+      navigate("/dashboard");
+    } catch (err) {
+      setShowPublishModal(false);
+      toast.error(`Error al publicar la encuesta: ${err.message}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -168,25 +202,17 @@ const CreateSurvey = () => {
     <div className="survey-page">
       {/* HEADER */}
       <div className="survey-header">
-        <button className="back-btn" onClick={() => navigate("/dashboard")}>
+        <button className="back-btn" onClick={() => navigate("/")}>
           ←
         </button>
 
         <div className="header-buttons">
-          <button
-            className="draft-btn"
-            onClick={handleSaveDraft}
-            disabled={isSavingDraft || isSubmitting}
-          >
-            {isSavingDraft ? "Guardando..." : "Guardar borrador"}
+          <button className="draft-btn" onClick={handleSaveDraft} disabled={isSubmitting}>
+            Guardar borrador
           </button>
 
-          <button
-            className="publish-btn"
-            onClick={handleSubmit}
-            disabled={isSubmitting || isSavingDraft}
-          >
-            {isSubmitting ? "Publicando..." : "Publicar"}
+          <button className="publish-btn" onClick={handlePublishClick} disabled={isSubmitting}>
+            {isSubmitting ? "Procesando..." : "Publicar"}
           </button>
         </div>
       </div>
@@ -233,16 +259,9 @@ const CreateSurvey = () => {
                   </button>
                 </div>
 
-                <Question
-                  id={q.id}
-                  type={q.type}
-                  onChange={handleQuestionChange}
-                  initialStatement={initial?.statement || ""}
-                  initialOptions={initial?.options || null}
-                />
-              </div>
-            );
-          })
+              <Question id={q.id} type={q.type} onChange={handleQuestionChange} />
+            </div>
+          ))
         )}
       </div>
 
@@ -262,6 +281,17 @@ const CreateSurvey = () => {
           ))}
         </div>
       </div>
+
+      <ConfirmModal
+        open={showPublishModal}
+        title="Publicar encuesta"
+        message="Una vez publicada, no podrás editar las preguntas. ¿Deseas publicarla ahora?"
+        confirmLabel="Sí, publicar"
+        cancelLabel="Cancelar"
+        busy={isSubmitting}
+        onConfirm={confirmPublish}
+        onCancel={() => setShowPublishModal(false)}
+      />
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import { getToken } from "./gettoken";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
+  import.meta.env.VITE_API_URL+"api/v1/" || "http://localhost:8000/api/v1";
 
 async function request(endpoint, options = {}) {
   const token = await getToken();
@@ -32,42 +32,39 @@ async function request(endpoint, options = {}) {
  * Crea una encuesta publicada con sus preguntas en el backend.
  */
 export function createSurvey(surveyData) {
-  return request("/surveys/", {
+  return request("surveys/", {
     method: "POST",
     body: JSON.stringify(surveyData),
   });
 }
 
 /**
- * Guarda un nuevo borrador. Permite preguntas incompletas y titulo vacio.
+ * Lista las encuestas del usuario autenticado (US-02).
  */
-export function saveDraft(draftData) {
-  return request("/surveys/draft", {
-    method: "POST",
-    body: JSON.stringify(draftData),
-  });
+export function listSurveys() {
+  return request("surveys/", { method: "GET" });
 }
 
 /**
- * Actualiza un borrador existente reemplazando sus preguntas.
+ * Publica una encuesta: cambia su estado de borrador a "Publicada" (US-04).
+ * @param {number|string} surveyId
  */
-export function updateDraft(draftId, draftData) {
-  return request(`/surveys/${draftId}/draft`, {
-    method: "PUT",
-    body: JSON.stringify(draftData),
-  });
+export function publishSurvey(surveyId) {
+  return request(`surveys/${surveyId}/publish`, { method: "PATCH" });
 }
 
 /**
- * Obtiene una encuesta (con sus preguntas) por id.
+ * Cierra una encuesta de forma permanente (US-09).
+ * @param {number|string} surveyId
  */
-export function getSurvey(surveyId) {
-  return request(`/surveys/${surveyId}`, { method: "GET" });
+export function closeSurvey(surveyId) {
+  return request(`surveys/${surveyId}/close`, { method: "PATCH" });
 }
 
 /**
- * Lista los borradores del usuario actual.
+ * Obtiene los resultados agregados de una encuesta (US-10).
+ * @param {number|string} surveyId
  */
-export function listDrafts() {
-  return request("/surveys/drafts", { method: "GET" });
+export function getSurveyResults(surveyId) {
+  return request(`surveys/${surveyId}/results`, { method: "GET" });
 }

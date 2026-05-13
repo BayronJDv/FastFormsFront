@@ -1,14 +1,37 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import SurveyQuestionField from "../components/SurveyQuestionField";
+import ConfirmModal from "../components/ConfirmModal";
 import { fetchSurveyByCode, submitSurveyResponse } from "../lib/surveyService";
 import "./SurveyAccess.css";
+
+const ANSWERED_STORAGE_PREFIX = "fastforms:answered:";
 
 const buildInitialAnswers = (questions) =>
   questions.reduce((accumulator, question) => {
     accumulator[question.id] = "";
     return accumulator;
   }, {});
+
+const storageKeyFor = (surveyCode) => `${ANSWERED_STORAGE_PREFIX}${surveyCode}`;
+
+const hasAlreadyAnswered = (surveyCode) => {
+  if (!surveyCode) return false;
+  try {
+    return window.localStorage.getItem(storageKeyFor(surveyCode)) === "true";
+  } catch {
+    return false;
+  }
+};
+
+const markAsAnswered = (surveyCode) => {
+  if (!surveyCode) return;
+  try {
+    window.localStorage.setItem(storageKeyFor(surveyCode), "true");
+  } catch {
+    /* localStorage no disponible: el bloqueo simplemente no persiste */
+  }
+};
 
 const SurveyAccess = () => {
   const navigate = useNavigate();
@@ -23,34 +46,37 @@ const SurveyAccess = () => {
   const [fieldErrors, setFieldErrors] = useState({});
   const [technicalError, setTechnicalError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [submitState, setSubmitState] = useState({ type: "", message: "" });
+  const [submitError, setSubmitError] = useState("");
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   useEffect(() => {
     let ignore = false;
 
     const loadSurvey = async () => {
-      setViewState("loading");
       setSurvey(null);
       setAnswers({});
       setFieldErrors({});
       setTechnicalError("");
-      setSubmitState({ type: "", message: "" });
+      setSubmitError("");
+      setShowConfirmModal(false);
+
+      // US-08 — si ya respondió esta encuesta (LocalStorage), no la volvemos a cargar
+      if (hasAlreadyAnswered(surveyCode)) {
+        setViewState("already_answered");
+        return;
+      }
+
+      setViewState("loading");
 
       try {
         const result = await fetchSurveyByCode(surveyCode);
-
-        if (ignore) {
-          return;
-        }
+        if (ignore) return;
 
         setViewState(result.status);
         setSurvey(result.survey ?? null);
         setAnswers(buildInitialAnswers(result.survey?.questions ?? []));
       } catch (error) {
-        if (ignore) {
-          return;
-        }
-
+        if (ignore) return;
         setViewState("api_error");
         setTechnicalError(error.message || "No fue posible cargar la encuesta en este momento.");
       }
@@ -69,7 +95,6 @@ const SurveyAccess = () => {
     if (!hasQuestions) {
       return "0 preguntas";
     }
-
     return `${survey.questions.length} pregunta${survey.questions.length === 1 ? "" : "s"}`;
   }, [hasQuestions, survey]);
 
@@ -83,7 +108,6 @@ const SurveyAccess = () => {
       if (!current[questionId]) {
         return current;
       }
-
       const updatedErrors = { ...current };
       delete updatedErrors[questionId];
       return updatedErrors;
@@ -94,19 +118,16 @@ const SurveyAccess = () => {
     if (!hasQuestions) {
       return {};
     }
-
     return survey.questions.reduce((accumulator, question) => {
       const answerValue = String(answers[question.id] ?? "").trim();
-
       if (!answerValue) {
         accumulator[question.id] = "Esta pregunta es obligatoria.";
       }
-
       return accumulator;
     }, {});
   };
 
-  const handleSubmit = async (event) => {
+  const handleRequestSubmit = (event) => {
     event.preventDefault();
 
     if (!survey?.id || !hasQuestions) {
@@ -114,18 +135,23 @@ const SurveyAccess = () => {
     }
 
     const nextErrors = validateAnswers();
-
     if (Object.keys(nextErrors).length > 0) {
       setFieldErrors(nextErrors);
-      setSubmitState({
-        type: "error",
-        message: "Completa las preguntas obligatorias antes de enviar.",
-      });
+      setSubmitError("Completa las preguntas obligatorias antes de enviar.");
+      return;
+    }
+
+    setSubmitError("");
+    setShowConfirmModal(true);
+  };
+
+  const confirmSubmit = async () => {
+    if (!survey?.id || !hasQuestions) {
       return;
     }
 
     setSubmitting(true);
-    setSubmitState({ type: "", message: "" });
+    setSubmitError("");
 
     try {
       await submitSurveyResponse({
@@ -136,15 +162,12 @@ const SurveyAccess = () => {
         })),
       });
 
-      setSubmitState({
-        type: "success",
-        message: "Tus respuestas fueron enviadas correctamente.",
-      });
+      markAsAnswered(surveyCode);
+      setShowConfirmModal(false);
+      setViewState("submitted");
     } catch (error) {
-      setSubmitState({
-        type: "error",
-        message: error.message || "No fue posible enviar tus respuestas.",
-      });
+      setShowConfirmModal(false);
+      setSubmitError(error.message || "No fue posible enviar tus respuestas.");
     } finally {
       setSubmitting(false);
     }
@@ -170,6 +193,23 @@ const SurveyAccess = () => {
           </section>
         ) : null}
 
+        {viewState === "already_answered" ? (
+          <section className="survey-state-card">
+            <h2>Ya has respondido esta encuesta</h2>
+            <p>Solo se permite una respuesta por persona. ¡Gracias por participar!</p>
+          </section>
+        ) : null}
+
+        {viewState === "submitted" ? (
+          <section className="survey-state-card survey-thanks-card">
+            <h2>¡Gracias por responder!</h2>
+            <p>Tus respuestas fueron enviadas correctamente.</p>
+            <button className="publish-btn" type="button" onClick={() => navigate("/")}>
+              Volver al inicio
+            </button>
+          </section>
+        ) : null}
+
         {viewState === "invalid_code" ? (
           <section className="survey-state-card">
             <h2>Código no válido</h2>
@@ -180,7 +220,7 @@ const SurveyAccess = () => {
         {viewState === "survey_closed" ? (
           <section className="survey-state-card">
             <h2>Encuesta cerrada</h2>
-            <p>Esta encuesta ya no está disponible para recibir respuestas.</p>
+            <p>Esta encuesta ya no acepta más respuestas.</p>
             {survey?.title ? <span className="survey-state-meta">{survey.title}</span> : null}
           </section>
         ) : null}
@@ -200,11 +240,11 @@ const SurveyAccess = () => {
         ) : null}
 
         {viewState === "ready" && survey ? (
-          <form className="survey-form-layout" onSubmit={handleSubmit}>
+          <form className="survey-form-layout" onSubmit={handleRequestSubmit}>
             <section className="card survey-intro-card">
               <span className="survey-chip">Encuesta disponible</span>
               <h1>{survey.title}</h1>
-              <p>Responde el formulario dinámicamente cargado desde el backend.</p>
+              <p>Responde todas las preguntas en una sola página y envía cuando termines.</p>
               <span className="survey-state-meta">{questionCountLabel}</span>
             </section>
 
@@ -223,11 +263,7 @@ const SurveyAccess = () => {
             </section>
 
             <section className="card survey-submit-card">
-              {submitState.message ? (
-                <p className={submitState.type === "success" ? "survey-submit-success" : "survey-submit-error"}>
-                  {submitState.message}
-                </p>
-              ) : null}
+              {submitError ? <p className="survey-submit-error">{submitError}</p> : null}
 
               <button className="publish-btn" type="submit" disabled={submitting}>
                 {submitting ? "Enviando respuestas..." : "Enviar respuestas"}
@@ -235,6 +271,17 @@ const SurveyAccess = () => {
             </section>
           </form>
         ) : null}
+
+        <ConfirmModal
+          open={showConfirmModal}
+          title="Confirmar envío"
+          message="¿Deseas enviar tus respuestas ahora? No podrás modificarlas después."
+          confirmLabel="Confirmar envío"
+          cancelLabel="Revisar de nuevo"
+          busy={submitting}
+          onConfirm={confirmSubmit}
+          onCancel={() => setShowConfirmModal(false)}
+        />
       </div>
     </div>
   );

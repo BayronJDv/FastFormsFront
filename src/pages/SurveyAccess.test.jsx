@@ -22,6 +22,7 @@ const renderSurveyAccess = (path = "/survey/ABC123") =>
 describe("SurveyAccess", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.localStorage.clear();
   });
 
   afterEach(() => {
@@ -54,11 +55,13 @@ describe("SurveyAccess", () => {
     renderSurveyAccess("/survey/CERRADA1");
 
     expect(await screen.findByRole("heading", { name: /encuesta cerrada/i })).toBeInTheDocument();
-    expect(screen.getByText(/ya no está disponible para recibir respuestas/i)).toBeInTheDocument();
+    expect(screen.getByText(/ya no acepta más respuestas/i)).toBeInTheDocument();
     expect(screen.getByText("Encuesta cerrada de prueba")).toBeInTheDocument();
+    // No se renderiza el formulario de llenado
+    expect(screen.queryByRole("button", { name: /enviar respuestas/i })).not.toBeInTheDocument();
   });
 
-  it("HU2: consulta preguntas y construye el formulario dinamicamente para responder la encuesta", async () => {
+  it("HU2: arma el formulario en una sola página y pide confirmación antes de enviar", async () => {
     surveyService.fetchSurveyByCode.mockResolvedValueOnce({
       status: "ready",
       survey: {
@@ -66,24 +69,14 @@ describe("SurveyAccess", () => {
         title: "Encuesta de satisfacción",
         code: "LISTA22",
         questions: [
-          {
-            id: 1,
-            type: "open",
-            content: "¿Qué mejorarías?",
-            options: [],
-          },
+          { id: 1, type: "open", content: "¿Qué mejorarías?", options: [] },
           {
             id: 2,
             type: "multiple_choice",
             content: "¿Cómo calificas el servicio?",
             options: ["Excelente", "Bueno", "Regular"],
           },
-          {
-            id: 3,
-            type: "yes_no",
-            content: "¿Nos recomendarías?",
-            options: [],
-          },
+          { id: 3, type: "yes_no", content: "¿Nos recomendarías?", options: [] },
         ],
       },
     });
@@ -102,7 +95,14 @@ describe("SurveyAccess", () => {
     });
     fireEvent.click(screen.getByRole("radio", { name: /excelente/i }));
     fireEvent.click(screen.getByRole("radio", { name: /sí/i }));
+
     fireEvent.click(screen.getByRole("button", { name: /enviar respuestas/i }));
+
+    // US-08: aparece el modal de confirmación
+    expect(await screen.findByText(/¿deseas enviar tus respuestas ahora\?/i)).toBeInTheDocument();
+    expect(surveyService.submitSurveyResponse).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: /confirmar envío/i }));
 
     await waitFor(() => {
       expect(surveyService.submitSurveyResponse).toHaveBeenCalledWith({
@@ -118,5 +118,17 @@ describe("SurveyAccess", () => {
     expect(
       await screen.findByText(/tus respuestas fueron enviadas correctamente/i)
     ).toBeInTheDocument();
+    expect(window.localStorage.getItem("fastforms:answered:LISTA22")).toBe("true");
+  });
+
+  it("HU3: bloquea el reenvío mostrando un mensaje cuando ya se respondió la encuesta", async () => {
+    window.localStorage.setItem("fastforms:answered:YALISTO1", "true");
+
+    renderSurveyAccess("/survey/YALISTO1");
+
+    expect(
+      await screen.findByRole("heading", { name: /ya has respondido esta encuesta/i })
+    ).toBeInTheDocument();
+    expect(surveyService.fetchSurveyByCode).not.toHaveBeenCalled();
   });
 });
