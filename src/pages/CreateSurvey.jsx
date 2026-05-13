@@ -1,7 +1,12 @@
-import React, { useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useCallback, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import Question from "../components/Question";
-import { createSurvey } from "../lib/apiClient";
+import {
+  createSurvey,
+  saveDraft,
+  updateDraft,
+  getSurvey,
+} from "../lib/apiClient";
 import "./CreateSurvey.css";
 
 const QUESTION_TYPE_MAP = {
@@ -10,18 +15,68 @@ const QUESTION_TYPE_MAP = {
   yes_no: "yes_no",
 };
 
+// Inverso: lo que viene del backend a la representacion interna del editor.
+const REVERSE_QUESTION_TYPE_MAP = {
+  open: "open",
+  multiple_choice: "unique_choice",
+  yes_no: "yes_no",
+};
+
 const CreateSurvey = () => {
   const navigate = useNavigate();
+  const { draftId } = useParams();
   const [title, setTitle] = useState("");
   const [questions, setQuestions] = useState([]);
   const [answersData, setAnswersData] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [isLoadingDraft, setIsLoadingDraft] = useState(Boolean(draftId));
 
   const questionTypes = [
     { id: "open", label: "Pregunta Abierta" },
     { id: "unique_choice", label: "Opción Múltiple" },
     { id: "yes_no", label: "Sí / No" },
   ];
+
+  // Si entramos con un draftId en la URL, traemos el borrador y repoblamos el editor.
+  useEffect(() => {
+    if (!draftId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const survey = await getSurvey(draftId);
+        if (cancelled) return;
+        setTitle(
+          survey.title && survey.title !== "(sin titulo)" ? survey.title : ""
+        );
+        const sorted = [...(survey.questions || [])].sort(
+          (a, b) => (a.position || 0) - (b.position || 0)
+        );
+        const loadedQuestions = [];
+        const loadedAnswers = {};
+        sorted.forEach((q) => {
+          const localId = crypto.randomUUID();
+          const localType =
+            REVERSE_QUESTION_TYPE_MAP[q.question_type] || "open";
+          loadedQuestions.push({ id: localId, type: localType });
+          loadedAnswers[localId] = {
+            statement: q.content || "",
+            type: localType,
+            options: q.options || undefined,
+          };
+        });
+        setQuestions(loadedQuestions);
+        setAnswersData(loadedAnswers);
+      } catch (err) {
+        alert(`Error al cargar el borrador: ${err.message}`);
+      } finally {
+        if (!cancelled) setIsLoadingDraft(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [draftId]);
 
   const handleQuestionChange = useCallback((id, data) => {
     setAnswersData((prev) => ({ ...prev, [id]: data }));
@@ -34,13 +89,33 @@ const CreateSurvey = () => {
 
   const handleRemoveQuestion = (id) => {
     setQuestions((prev) => prev.filter((q) => q.id !== id));
-
     setAnswersData((prev) => {
       const updated = { ...prev };
       delete updated[id];
       return updated;
     });
   };
+
+  // Construye el payload aceptado por el backend, tanto para publicar como para guardar borrador.
+  const buildPayload = () => ({
+    title: title.trim(),
+    questions: questions.map((q, index) => {
+      const data = answersData[q.id] || { statement: "", type: q.type };
+      const mapped = {
+        content: data.statement || "",
+        question_type: QUESTION_TYPE_MAP[data.type],
+        position: index + 1,
+      };
+      if (
+        data.type === "unique_choice" &&
+        Array.isArray(data.options) &&
+        data.options.length > 0
+      ) {
+        mapped.options = data.options;
+      }
+      return mapped;
+    }),
+  });
 
   const handleSubmit = async () => {
     if (!title.trim()) return alert("El título de la encuesta es obligatorio");
@@ -51,25 +126,9 @@ const CreateSurvey = () => {
     if (hasEmptyStatements)
       return alert("Todas las preguntas deben tener un enunciado");
 
-    const payload = {
-      title: title.trim(),
-      questions: questions.map((q, index) => {
-        const data = answersData[q.id];
-        const mapped = {
-          content: data.statement,
-          question_type: QUESTION_TYPE_MAP[data.type],
-          position: index + 1,
-        };
-        if (data.type === "unique_choice" && data.options) {
-          mapped.options = data.options;
-        }
-        return mapped;
-      }),
-    };
-
     setIsSubmitting(true);
     try {
-      const result = await createSurvey(payload);
+      const result = await createSurvey(buildPayload());
       alert(`Encuesta creada. Código: ${result.unique_code}`);
       navigate("/dashboard");
     } catch (err) {
@@ -79,27 +138,57 @@ const CreateSurvey = () => {
     }
   };
 
+  const handleSaveDraft = async () => {
+    setIsSavingDraft(true);
+    try {
+      const payload = buildPayload();
+      const result = draftId
+        ? await updateDraft(draftId, payload)
+        : await saveDraft(payload);
+      alert("Borrador guardado.");
+      if (!draftId && result?.id) {
+        // Reemplazamos la URL para que sucesivos 'guardar' actualicen este mismo borrador
+        // en lugar de crear duplicados.
+        navigate(`/create-survey/${result.id}`, { replace: true });
+      } else {
+        navigate("/dashboard");
+      }
+    } catch (err) {
+      alert(`Error al guardar el borrador: ${err.message}`);
+    } finally {
+      setIsSavingDraft(false);
+    }
+  };
+
+  if (isLoadingDraft) {
+    return <div className="survey-page">Cargando borrador...</div>;
+  }
+
   return (
     <div className="survey-page">
-
       {/* HEADER */}
       <div className="survey-header">
-
-        <button
-          className="back-btn"
-          onClick={() => navigate("/")}
-        >
-          ←   
+        <button className="back-btn" onClick={() => navigate("/dashboard")}>
+          ←
         </button>
 
         <div className="header-buttons">
-          <button className="draft-btn">Guardar borrador</button>
+          <button
+            className="draft-btn"
+            onClick={handleSaveDraft}
+            disabled={isSavingDraft || isSubmitting}
+          >
+            {isSavingDraft ? "Guardando..." : "Guardar borrador"}
+          </button>
 
-          <button className="publish-btn" onClick={handleSubmit} disabled={isSubmitting}>
+          <button
+            className="publish-btn"
+            onClick={handleSubmit}
+            disabled={isSubmitting || isSavingDraft}
+          >
             {isSubmitting ? "Publicando..." : "Publicar"}
           </button>
         </div>
-
       </div>
 
       {/* INFO ENCUESTA */}
@@ -128,27 +217,32 @@ const CreateSurvey = () => {
             pregunta.
           </div>
         ) : (
-          questions.map((q) => (
-            <div key={q.id} className="question-container">
-              <div className="question-toolbar">
-                <span className="question-chip">Pregunta</span>
+          questions.map((q) => {
+            const initial = answersData[q.id];
+            return (
+              <div key={q.id} className="question-container">
+                <div className="question-toolbar">
+                  <span className="question-chip">Pregunta</span>
 
-                <button
-                  type="button"
-                  className="delete-btn"
-                  onClick={() => handleRemoveQuestion(q.id)}
-                >
-                  Eliminar
-                </button>
+                  <button
+                    type="button"
+                    className="delete-btn"
+                    onClick={() => handleRemoveQuestion(q.id)}
+                  >
+                    Eliminar
+                  </button>
+                </div>
+
+                <Question
+                  id={q.id}
+                  type={q.type}
+                  onChange={handleQuestionChange}
+                  initialStatement={initial?.statement || ""}
+                  initialOptions={initial?.options || null}
+                />
               </div>
-
-              <Question
-                id={q.id}
-                type={q.type}
-                onChange={handleQuestionChange}
-              />
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 

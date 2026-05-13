@@ -21,6 +21,7 @@ const router = createBrowserRouter([
       { path: "/dashboard", element: <Dashboard /> },
       { path: "/login", element: <Login /> },
       { path: "/create-survey", element: <CreateSurvey /> },
+      { path: "/create-survey/:draftId", element: <CreateSurvey /> },
       { path: "/survey", element: <SurveyAccess /> },
       { path: "/survey/:surveyCode", element: <SurveyAccess /> },
     ],

@@ -29,12 +29,45 @@ async function request(endpoint, options = {}) {
 }
 
 /**
- * Crea una encuesta con sus preguntas en el backend.
- * @param {{ title: string, questions: Array }} surveyData
+ * Crea una encuesta publicada con sus preguntas en el backend.
  */
 export function createSurvey(surveyData) {
   return request("/surveys/", {
     method: "POST",
     body: JSON.stringify(surveyData),
   });
+}
+
+/**
+ * Guarda un nuevo borrador. Permite preguntas incompletas y titulo vacio.
+ */
+export function saveDraft(draftData) {
+  return request("/surveys/draft", {
+    method: "POST",
+    body: JSON.stringify(draftData),
+  });
+}
+
+/**
+ * Actualiza un borrador existente reemplazando sus preguntas.
+ */
+export function updateDraft(draftId, draftData) {
+  return request(`/surveys/${draftId}/draft`, {
+    method: "PUT",
+    body: JSON.stringify(draftData),
+  });
+}
+
+/**
+ * Obtiene una encuesta (con sus preguntas) por id.
+ */
+export function getSurvey(surveyId) {
+  return request(`/surveys/${surveyId}`, { method: "GET" });
+}
+
+/**
+ * Lista los borradores del usuario actual.
+ */
+export function listDrafts() {
+  return request("/surveys/drafts", { method: "GET" });
 }
