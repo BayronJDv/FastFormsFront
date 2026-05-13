@@ -23,7 +23,7 @@
 }
 
 .dashboard-create-btn {
-  background: #4f46e5;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
   color: #fff;
   border: none;
   border-radius: 10px;
@@ -32,6 +32,13 @@
   font-size: 15px;
   cursor: pointer;
   white-space: nowrap;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+}
+
+.dashboard-create-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.3);
 }
 
 .dashboard-state {
@@ -62,6 +69,13 @@
   border-radius: 12px;
   padding: 18px 20px;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease;
+}
+
+.dashboard-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.1);
 }
 
 .dashboard-item-main {
@@ -128,6 +142,22 @@
   border-color: #fecaca;
 }
 
+@media (max-width: 768px) {
+  .dashboard-page {
+    padding: 24px 16px 40px;
+  }
+
+  .dashboard-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .dashboard-create-btn {
+    width: 100%;
+    text-align: center;
+  }
+}
+
 @media (max-width: 600px) {
   .dashboard-item {
     flex-direction: column;
@@ -141,5 +171,29 @@
   .dashboard-action-btn,
   .dashboard-create-btn {
     flex: 1;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-page {
+    padding: 16px 12px 32px;
+  }
+
+  .dashboard-header h1 {
+    font-size: 22px;
+  }
+
+  .dashboard-item {
+    padding: 14px 16px;
+  }
+
+  .dashboard-item-actions {
+    flex-direction: column;
+  }
+
+  .dashboard-action-btn {
+    width: 100%;
+    text-align: center;
+    min-height: 42px;
   }
 }
