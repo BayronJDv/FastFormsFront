@@ -1,11 +1,17 @@
 import React, { useState, useCallback, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAtom } from "jotai";
 import { userAtom } from "../stores/authAtom";
 import toast from "react-hot-toast";
 import Question from "../components/Question";
 import ConfirmModal from "../components/ConfirmModal";
-import { createSurvey, publishSurvey } from "../lib/apiClient";
+import {
+  createSurvey,
+  publishSurvey,
+  saveDraft,
+  updateDraft,
+  getSurvey,
+} from "../lib/apiClient";
 import "./CreateSurvey.css";
 
 const QUESTION_TYPE_MAP = {
@@ -14,7 +20,6 @@ const QUESTION_TYPE_MAP = {
   yes_no: "yes_no",
 };
 
-// Inverso: lo que viene del backend a la representacion interna del editor.
 const REVERSE_QUESTION_TYPE_MAP = {
   open: "open",
   multiple_choice: "unique_choice",
@@ -24,10 +29,11 @@ const REVERSE_QUESTION_TYPE_MAP = {
 const CreateSurvey = () => {
   const [user] = useAtom(userAtom);
   const navigate = useNavigate();
+  const { draftId } = useParams();
 
   useEffect(() => {
     if (!user) {
-      navigate('/login');
+      navigate("/login");
     }
   }, [user, navigate]);
 
@@ -35,6 +41,8 @@ const CreateSurvey = () => {
   const [questions, setQuestions] = useState([]);
   const [answersData, setAnswersData] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [isLoadingDraft, setIsLoadingDraft] = useState(Boolean(draftId));
   const [showPublishModal, setShowPublishModal] = useState(false);
 
   const questionTypes = [
@@ -43,7 +51,7 @@ const CreateSurvey = () => {
     { id: "yes_no", label: "Sí / No" },
   ];
 
-  // Si entramos con un draftId en la URL, traemos el borrador y repoblamos el editor.
+  // Si entramos con :draftId en la URL, traemos el borrador y repoblamos el editor.
   useEffect(() => {
     if (!draftId) return;
     let cancelled = false;
@@ -73,7 +81,7 @@ const CreateSurvey = () => {
         setQuestions(loadedQuestions);
         setAnswersData(loadedAnswers);
       } catch (err) {
-        alert(`Error al cargar el borrador: ${err.message}`);
+        toast.error(`Error al cargar el borrador: ${err.message}`);
       } finally {
         if (!cancelled) setIsLoadingDraft(false);
       }
@@ -101,27 +109,8 @@ const CreateSurvey = () => {
     });
   };
 
-  const isFormValid = () => {
-    if (!title.trim()) {
-      alert("El título de la encuesta es obligatorio");
-      return false;
-    }
-    if (questions.length === 0) {
-      alert("Añade al menos una pregunta");
-      return false;
-    }
-    const values = Object.values(answersData);
-    const hasEmptyStatements = values.some(
-      (q) => !q || !q.statement || !q.statement.trim()
-    );
-    if (hasEmptyStatements) {
-      alert("Todas las preguntas deben tener un enunciado");
-      return false;
-    }
-    return true;
-  };
-
-  const buildPayload = () => ({
+  // Payload estricto para publicar (todas las validaciones obligatorias).
+  const buildStrictPayload = () => ({
     title: title.trim(),
     questions: questions.map((q, index) => {
       const data = answersData[q.id];
@@ -137,17 +126,66 @@ const CreateSurvey = () => {
     }),
   });
 
+  // Payload relajado para borradores (permite preguntas / opciones incompletas).
+  const buildDraftPayload = () => ({
+    title: title.trim(),
+    questions: questions.map((q, index) => {
+      const data = answersData[q.id] || { statement: "", type: q.type };
+      const mapped = {
+        content: data.statement || "",
+        question_type: QUESTION_TYPE_MAP[data.type],
+        position: index + 1,
+      };
+      if (
+        data.type === "unique_choice" &&
+        Array.isArray(data.options) &&
+        data.options.length > 0
+      ) {
+        mapped.options = data.options;
+      }
+      return mapped;
+    }),
+  });
+
+  const isFormValid = () => {
+    if (!title.trim()) {
+      toast.error("El título de la encuesta es obligatorio");
+      return false;
+    }
+    if (questions.length === 0) {
+      toast.error("Añade al menos una pregunta");
+      return false;
+    }
+    const values = Object.values(answersData);
+    const hasEmptyStatements = values.some(
+      (q) => !q || !q.statement || !q.statement.trim()
+    );
+    if (hasEmptyStatements) {
+      toast.error("Todas las preguntas deben tener un enunciado");
+      return false;
+    }
+    return true;
+  };
+
   const handleSaveDraft = async () => {
-    if (!isFormValid()) return;
-    setIsSubmitting(true);
+    setIsSavingDraft(true);
     try {
-      const created = await createSurvey(buildPayload());
-      alert(`Borrador guardado. Código: ${created.unique_code}`);
-      navigate("/dashboard");
+      const payload = buildDraftPayload();
+      const result = draftId
+        ? await updateDraft(draftId, payload)
+        : await saveDraft(payload);
+      toast.success("Borrador guardado.");
+      if (!draftId && result?.id) {
+        // Reemplazamos la URL para que sucesivos 'Guardar' actualicen este
+        // mismo borrador en lugar de crear duplicados.
+        navigate(`/create-survey/${result.id}`, { replace: true });
+      } else {
+        navigate("/dashboard");
+      }
     } catch (err) {
-      alert(`Error al guardar el borrador: ${err.message}`);
+      toast.error(`Error al guardar el borrador: ${err.message}`);
     } finally {
-      setIsSubmitting(false);
+      setIsSavingDraft(false);
     }
   };
 
@@ -159,38 +197,25 @@ const CreateSurvey = () => {
   const confirmPublish = async () => {
     setIsSubmitting(true);
     try {
-      const created = await createSurvey(buildPayload());
-      const published = await publishSurvey(created.id);
+      let surveyId = draftId;
+      if (!surveyId) {
+        const created = await createSurvey(buildStrictPayload());
+        surveyId = created.id;
+      } else {
+        // Sincronizamos los cambios en pantalla con el borrador antes de publicar.
+        await updateDraft(surveyId, buildDraftPayload());
+      }
+      const published = await publishSurvey(surveyId);
       setShowPublishModal(false);
-      toast.success(`Encuesta publicada. Código: ${published?.unique_code ?? created.unique_code}`);
+      toast.success(
+        `Encuesta publicada. Código: ${published?.unique_code ?? ""}`
+      );
       navigate("/dashboard");
     } catch (err) {
       setShowPublishModal(false);
       toast.error(`Error al publicar la encuesta: ${err.message}`);
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const handleSaveDraft = async () => {
-    setIsSavingDraft(true);
-    try {
-      const payload = buildPayload();
-      const result = draftId
-        ? await updateDraft(draftId, payload)
-        : await saveDraft(payload);
-      alert("Borrador guardado.");
-      if (!draftId && result?.id) {
-        // Reemplazamos la URL para que sucesivos 'guardar' actualicen este mismo borrador
-        // en lugar de crear duplicados.
-        navigate(`/create-survey/${result.id}`, { replace: true });
-      } else {
-        navigate("/dashboard");
-      }
-    } catch (err) {
-      alert(`Error al guardar el borrador: ${err.message}`);
-    } finally {
-      setIsSavingDraft(false);
     }
   };
 
@@ -202,16 +227,24 @@ const CreateSurvey = () => {
     <div className="survey-page">
       {/* HEADER */}
       <div className="survey-header">
-        <button className="back-btn" onClick={() => navigate("/")}>
+        <button className="back-btn" onClick={() => navigate("/dashboard")}>
           ←
         </button>
 
         <div className="header-buttons">
-          <button className="draft-btn" onClick={handleSaveDraft} disabled={isSubmitting}>
-            Guardar borrador
+          <button
+            className="draft-btn"
+            onClick={handleSaveDraft}
+            disabled={isSubmitting || isSavingDraft}
+          >
+            {isSavingDraft ? "Guardando..." : "Guardar borrador"}
           </button>
 
-          <button className="publish-btn" onClick={handlePublishClick} disabled={isSubmitting}>
+          <button
+            className="publish-btn"
+            onClick={handlePublishClick}
+            disabled={isSubmitting || isSavingDraft}
+          >
             {isSubmitting ? "Procesando..." : "Publicar"}
           </button>
         </div>
@@ -249,7 +282,6 @@ const CreateSurvey = () => {
               <div key={q.id} className="question-container">
                 <div className="question-toolbar">
                   <span className="question-chip">Pregunta</span>
-
                   <button
                     type="button"
                     className="delete-btn"
@@ -259,16 +291,22 @@ const CreateSurvey = () => {
                   </button>
                 </div>
 
-              <Question id={q.id} type={q.type} onChange={handleQuestionChange} />
-            </div>
-          ))
+                <Question
+                  id={q.id}
+                  type={q.type}
+                  onChange={handleQuestionChange}
+                  initialStatement={initial?.statement || ""}
+                  initialOptions={initial?.options || null}
+                />
+              </div>
+            );
+          })
         )}
       </div>
 
       {/* AGREGAR PREGUNTA */}
       <div className="card">
         <p className="add-question-text">Agregar pregunta:</p>
-
         <div className="question-buttons">
           {questionTypes.map((type) => (
             <button
