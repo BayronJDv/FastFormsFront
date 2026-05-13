@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import DonutChart from "../components/DonutChart";
-import { getSurveyResults } from "../lib/apiClient";
+import { getSurveyResults, exportSurveyResultsCsv } from "../lib/apiClient";
 import "./SurveyResults.css";
 
 const SurveyResults = () => {
@@ -11,6 +11,7 @@ const SurveyResults = () => {
   const [state, setState] = useState("loading"); // loading | ready | error
   const [results, setResults] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
+  const [csvExporting, setCsvExporting] = useState(false);
 
   useEffect(() => {
     let ignore = false;
@@ -34,6 +35,20 @@ const SurveyResults = () => {
       ignore = true;
     };
   }, [surveyId]);
+
+  const handleExportCsv = async () => {
+    setCsvExporting(true);
+    try {
+      await exportSurveyResultsCsv(surveyId, results?.title
+        ? `encuesta_${results.title.replace(/[^a-zA-Z0-9]/g, "_")}_resultados.csv`
+        : undefined
+      );
+    } catch (error) {
+      alert(`No fue posible exportar el CSV: ${error.message}`);
+    } finally {
+      setCsvExporting(false);
+    }
+  };
 
   const responsesLabel =
     results && results.total_responses === 1
@@ -59,10 +74,22 @@ const SurveyResults = () => {
 
       {state === "ready" && results ? (
         results.total_responses === 0 ? (
-          <p className="results-state">Aún no hay respuestas para esta encuesta</p>
+          <div className="results-empty-wrapper">
+            <p className="results-state">Aún no hay respuestas para esta encuesta</p>
+            {results.title ? (
+              <button className="csv-export-btn" onClick={handleExportCsv} disabled={csvExporting}>
+                {csvExporting ? "Exportando..." : "Exportar CSV"}
+              </button>
+            ) : null}
+          </div>
         ) : (
           <div className="results-list">
-            <p className="results-summary">{responsesLabel}</p>
+            <div className="results-summary-row">
+              <p className="results-summary">{responsesLabel}</p>
+              <button className="csv-export-btn" onClick={handleExportCsv} disabled={csvExporting}>
+                {csvExporting ? "Exportando..." : "Exportar CSV"}
+              </button>
+            </div>
 
             {results.questions.map((question) => (
               <section key={question.question_id} className="results-card">

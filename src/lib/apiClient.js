@@ -69,3 +69,35 @@ export function closeSurvey(surveyId) {
 export function getSurveyResults(surveyId) {
   return request(`surveys/${surveyId}/results`, { method: "GET" });
 }
+
+/**
+ * Exporta los resultados de una encuesta a CSV y descarga el archivo.
+ * Solo el creador de la encuesta puede exportar (validado por el backend).
+ * @param {number|string} surveyId
+ * @param {string} filename
+ */
+export async function exportSurveyResultsCsv(surveyId, filename = `encuesta_${surveyId}_resultados.csv`) {
+  const token = await getToken();
+
+  const response = await fetch(`${API_BASE_URL}surveys/${surveyId}/results/csv`, {
+    method: "GET",
+    headers: {
+      Authorization: token ? `Bearer ${token}` : "",
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.detail || `Error ${response.status}`);
+  }
+
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  URL.revokeObjectURL(url);
+}
