@@ -29,8 +29,7 @@ async function request(endpoint, options = {}) {
 }
 
 /**
- * Crea una encuesta con sus preguntas en el backend.
- * @param {{ title: string, questions: Array }} surveyData
+ * Crea una encuesta publicada con sus preguntas en el backend.
  */
 export function createSurvey(surveyData) {
   return request("surveys/", {

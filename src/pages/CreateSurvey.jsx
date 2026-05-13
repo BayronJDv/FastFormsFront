@@ -14,6 +14,13 @@ const QUESTION_TYPE_MAP = {
   yes_no: "yes_no",
 };
 
+// Inverso: lo que viene del backend a la representacion interna del editor.
+const REVERSE_QUESTION_TYPE_MAP = {
+  open: "open",
+  multiple_choice: "unique_choice",
+  yes_no: "yes_no",
+};
+
 const CreateSurvey = () => {
   const [user] = useAtom(userAtom);
   const navigate = useNavigate();
@@ -35,6 +42,46 @@ const CreateSurvey = () => {
     { id: "unique_choice", label: "Opción Múltiple" },
     { id: "yes_no", label: "Sí / No" },
   ];
+
+  // Si entramos con un draftId en la URL, traemos el borrador y repoblamos el editor.
+  useEffect(() => {
+    if (!draftId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const survey = await getSurvey(draftId);
+        if (cancelled) return;
+        setTitle(
+          survey.title && survey.title !== "(sin titulo)" ? survey.title : ""
+        );
+        const sorted = [...(survey.questions || [])].sort(
+          (a, b) => (a.position || 0) - (b.position || 0)
+        );
+        const loadedQuestions = [];
+        const loadedAnswers = {};
+        sorted.forEach((q) => {
+          const localId = crypto.randomUUID();
+          const localType =
+            REVERSE_QUESTION_TYPE_MAP[q.question_type] || "open";
+          loadedQuestions.push({ id: localId, type: localType });
+          loadedAnswers[localId] = {
+            statement: q.content || "",
+            type: localType,
+            options: q.options || undefined,
+          };
+        });
+        setQuestions(loadedQuestions);
+        setAnswersData(loadedAnswers);
+      } catch (err) {
+        alert(`Error al cargar el borrador: ${err.message}`);
+      } finally {
+        if (!cancelled) setIsLoadingDraft(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [draftId]);
 
   const handleQuestionChange = useCallback((id, data) => {
     setAnswersData((prev) => ({ ...prev, [id]: data }));
@@ -125,9 +172,34 @@ const CreateSurvey = () => {
     }
   };
 
+  const handleSaveDraft = async () => {
+    setIsSavingDraft(true);
+    try {
+      const payload = buildPayload();
+      const result = draftId
+        ? await updateDraft(draftId, payload)
+        : await saveDraft(payload);
+      alert("Borrador guardado.");
+      if (!draftId && result?.id) {
+        // Reemplazamos la URL para que sucesivos 'guardar' actualicen este mismo borrador
+        // en lugar de crear duplicados.
+        navigate(`/create-survey/${result.id}`, { replace: true });
+      } else {
+        navigate("/dashboard");
+      }
+    } catch (err) {
+      alert(`Error al guardar el borrador: ${err.message}`);
+    } finally {
+      setIsSavingDraft(false);
+    }
+  };
+
+  if (isLoadingDraft) {
+    return <div className="survey-page">Cargando borrador...</div>;
+  }
+
   return (
     <div className="survey-page">
-
       {/* HEADER */}
       <div className="survey-header">
         <button className="back-btn" onClick={() => navigate("/")}>
@@ -171,19 +243,21 @@ const CreateSurvey = () => {
             pregunta.
           </div>
         ) : (
-          questions.map((q) => (
-            <div key={q.id} className="question-container">
-              <div className="question-toolbar">
-                <span className="question-chip">Pregunta</span>
+          questions.map((q) => {
+            const initial = answersData[q.id];
+            return (
+              <div key={q.id} className="question-container">
+                <div className="question-toolbar">
+                  <span className="question-chip">Pregunta</span>
 
-                <button
-                  type="button"
-                  className="delete-btn"
-                  onClick={() => handleRemoveQuestion(q.id)}
-                >
-                  Eliminar
-                </button>
-              </div>
+                  <button
+                    type="button"
+                    className="delete-btn"
+                    onClick={() => handleRemoveQuestion(q.id)}
+                  >
+                    Eliminar
+                  </button>
+                </div>
 
               <Question id={q.id} type={q.type} onChange={handleQuestionChange} />
             </div>
