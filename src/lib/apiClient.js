@@ -37,6 +37,7 @@ async function request(endpoint, options = {}) {
 
 /**
  * Crea una encuesta con sus preguntas (validacion estricta para publicar).
+ * @param {{ title: string, questions: Array }} surveyData
  */
 export function createSurvey(surveyData) {
   return request("surveys/", {
@@ -54,6 +55,7 @@ export function listSurveys() {
 
 /**
  * Publica una encuesta: cambia su estado de borrador a "Publicada" (US-04).
+ * @param {number|string} surveyId
  */
 export function publishSurvey(surveyId) {
   return request(`surveys/${surveyId}/publish`, { method: "PATCH" });
@@ -61,6 +63,7 @@ export function publishSurvey(surveyId) {
 
 /**
  * Cierra una encuesta de forma permanente (US-09).
+ * @param {number|string} surveyId
  */
 export function closeSurvey(surveyId) {
   return request(`surveys/${surveyId}/close`, { method: "PATCH" });
@@ -68,6 +71,7 @@ export function closeSurvey(surveyId) {
 
 /**
  * Obtiene los resultados agregados de una encuesta (US-10).
+ * @param {number|string} surveyId
  */
 export function getSurveyResults(surveyId) {
   return request(`surveys/${surveyId}/results`, { method: "GET" });
