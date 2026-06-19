@@ -1,8 +1,24 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import DonutChart from "../components/DonutChart";
 import { getSurveyResults, exportSurveyResultsCsv } from "../lib/apiClient";
 import "./SurveyResults.css";
+
+// US-17 — Normaliza una pregunta abierta a entradas {text, is_voice} para
+// poder mostrar el badge "por voz" sin perder retrocompatibilidad con el
+// formato anterior (`texts`).
+const toTextEntries = (question) => {
+  if (Array.isArray(question.text_entries) && question.text_entries.length > 0) {
+    return question.text_entries.map((entry) => ({
+      text: entry?.text ?? "",
+      isVoice: Boolean(entry?.is_voice),
+    }));
+  }
+  if (Array.isArray(question.texts)) {
+    return question.texts.map((text) => ({ text, isVoice: false }));
+  }
+  return [];
+};
 
 const SurveyResults = () => {
   const navigate = useNavigate();
@@ -12,6 +28,8 @@ const SurveyResults = () => {
   const [results, setResults] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [csvExporting, setCsvExporting] = useState(false);
+  // US-17 — Filtro de busqueda por palabra clave sobre transcripciones.
+  const [textSearch, setTextSearch] = useState("");
 
   useEffect(() => {
     let ignore = false;
@@ -55,6 +73,12 @@ const SurveyResults = () => {
       ? "1 respuesta recibida"
       : `${results?.total_responses ?? 0} respuestas recibidas`;
 
+  const normalizedSearch = textSearch.trim().toLowerCase();
+  const hasOpenQuestion = useMemo(
+    () => Boolean(results?.questions?.some((q) => q.question_type === "open")),
+    [results]
+  );
+
   return (
     <div className="results-page">
       <div className="results-header">
@@ -91,31 +115,70 @@ const SurveyResults = () => {
               </button>
             </div>
 
-            {results.questions.map((question) => (
-              <section key={question.question_id} className="results-card">
-                <h3>{question.content}</h3>
+            {hasOpenQuestion ? (
+              <div className="results-search-row">
+                <input
+                  type="search"
+                  className="results-search-input"
+                  placeholder="Buscar palabra clave en respuestas abiertas..."
+                  value={textSearch}
+                  onChange={(event) => setTextSearch(event.target.value)}
+                />
+              </div>
+            ) : null}
 
-                {question.question_type === "open" ? (
-                  question.texts && question.texts.length > 0 ? (
-                    <ul className="results-text-feed">
-                      {question.texts.map((text, index) => (
-                        <li key={index}>{text}</li>
-                      ))}
-                    </ul>
+            {results.questions.map((question) => {
+              const isOpen = question.question_type === "open";
+              const entries = isOpen ? toTextEntries(question) : [];
+              const filteredEntries = normalizedSearch
+                ? entries.filter((entry) =>
+                    entry.text.toLowerCase().includes(normalizedSearch)
+                  )
+                : entries;
+
+              return (
+                <section key={question.question_id} className="results-card">
+                  <h3>{question.content}</h3>
+
+                  {isOpen ? (
+                    entries.length > 0 ? (
+                      filteredEntries.length > 0 ? (
+                        <ul className="results-text-feed">
+                          {filteredEntries.map((entry, index) => (
+                            <li key={index} className="results-text-feed-item">
+                              <span>{entry.text}</span>
+                              {entry.isVoice ? (
+                                <span
+                                  className="results-voice-badge"
+                                  title="Respuesta dictada por voz"
+                                  aria-label="Respuesta por voz"
+                                >
+                                  🎤 por voz
+                                </span>
+                              ) : null}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="results-empty-question">
+                          Ninguna respuesta coincide con "{textSearch}".
+                        </p>
+                      )
+                    ) : (
+                      <p className="results-empty-question">
+                        Sin respuestas para esta pregunta.
+                      </p>
+                    )
+                  ) : question.total_answers > 0 ? (
+                    <DonutChart data={question.options ?? []} />
                   ) : (
                     <p className="results-empty-question">
                       Sin respuestas para esta pregunta.
                     </p>
-                  )
-                ) : question.total_answers > 0 ? (
-                  <DonutChart data={question.options ?? []} />
-                ) : (
-                  <p className="results-empty-question">
-                    Sin respuestas para esta pregunta.
-                  </p>
-                )}
-              </section>
-            ))}
+                  )}
+                </section>
+              );
+            })}
           </div>
         )
       ) : null}
