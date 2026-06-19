@@ -1,8 +1,18 @@
 import React, { useState, useEffect, memo } from 'react';
 
-const Question = memo(({ id, type, onChange }) => {
-  const [statement, setStatement] = useState('');
-  const [choices, setChoices] = useState([]);
+const Question = memo(({
+  id,
+  type,
+  onChange,
+  initialStatement = '',
+  initialOptions = null,
+}) => {
+  const [statement, setStatement] = useState(initialStatement);
+  const [choices, setChoices] = useState(() =>
+    initialOptions && initialOptions.length > 0
+      ? initialOptions.map(value => ({ id: crypto.randomUUID(), value }))
+      : []
+  );
 
   useEffect(() => {
     const data = { statement, type };
@@ -17,11 +27,11 @@ const Question = memo(({ id, type, onChange }) => {
   };
 
   return (
-    <div >
+    <div>
       <label htmlFor={`input-${id}`}>Enunciado de la pregunta ({type}):</label>
-      <input 
+      <input
         id={`input-${id}`}
-        type="text" 
+        type="text"
         value={statement}
         onChange={(e) => setStatement(e.target.value)}
         placeholder="Escribe tu pregunta aquí..."
@@ -30,7 +40,7 @@ const Question = memo(({ id, type, onChange }) => {
       {type === 'unique_choice' && (
         <div>
           {choices.map((choice) => (
-            <input 
+            <input
               key={choice.id}
               value={choice.value}
               onChange={(e) => handleChoiceChange(choice.id, e.target.value)}

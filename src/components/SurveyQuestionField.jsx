@@ -23,7 +23,7 @@ const SurveyQuestionField = ({ question, value, error, onChange }) => {
       {questionType === "multiple_choice" || questionType === "unique_choice" ? (
         <div className="survey-options-list" role="radiogroup" aria-labelledby={fieldId}>
           {question.options.map((option) => (
-            <label key={option} className="survey-option-item">
+            <label key={option} className={`survey-option-item ${value === option ? "survey-option-item-selected" : ""}`}>
               <input
                 type="radio"
                 name={fieldId}
@@ -40,7 +40,7 @@ const SurveyQuestionField = ({ question, value, error, onChange }) => {
       {questionType === "yes_no" ? (
         <div className="survey-options-list" role="radiogroup" aria-labelledby={fieldId}>
           {["Sí", "No"].map((option) => (
-            <label key={option} className="survey-option-item">
+            <label key={option} className={`survey-option-item ${value === option ? "survey-option-item-selected" : ""}`}>
               <input
                 type="radio"
                 name={fieldId}
