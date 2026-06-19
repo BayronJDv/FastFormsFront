@@ -32,8 +32,9 @@ Fast Forms permite **dictar enunciados** mientras se construye una encuesta
 
 ### Prerrequisitos
 
-1. El backend debe estar levantado y tener `OPENAI_API_KEY` configurada
-   (ver `FastFormsBack/README.md`).
+1. El backend debe estar levantado con un proveedor de Whisper configurado.
+   Por defecto usa **Whisper local** (`openai/whisper`), que no necesita API
+   key pero sí `ffmpeg`. Ver `FastFormsBack/README.md` para los detalles.
 2. La tabla `answers` debe incluir la columna `is_voice` (US-17). Hay una
    migración idempotente al pie de `base.sql`.
 3. Variables de entorno en el `.env` del front:
