@@ -122,6 +122,7 @@ export const submitSurveyResponse = async ({ surveyId, answers }) => {
     response_id: response.id,
     question_id: answer.questionId,
     answer_text: answer.answer,
+    is_voice: Boolean(answer.isVoice),
   }));
 
   const { error: answersError } = await supabase.from("answers").insert(answersPayload);

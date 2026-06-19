@@ -136,3 +136,42 @@ export function updateDraft(draftId, draftData) {
 export function getSurvey(surveyId) {
   return request(`surveys/${surveyId}`, { method: "GET" });
 }
+
+/**
+ * US-12 — Envia el audio grabado al backend para transcribirlo con Whisper.
+ * El token se incluye si hay sesion (US-13 / Constructor), pero el endpoint
+ * tambien acepta requests anonimas (US-14 / Encuestado).
+ * @param {Blob} audioBlob
+ * @param {{ language?: string, filename?: string }} [options]
+ * @returns {Promise<{ text: string, language: string, confidence: number | null }>}
+ */
+export async function transcribeAudio(audioBlob, options = {}) {
+  const { language = "es", filename } = options;
+  const extension = (audioBlob.type || "audio/webm").split("/")[1]?.split(";")[0] || "webm";
+  const blobName = filename || `clip.${extension}`;
+
+  const formData = new FormData();
+  formData.append("audio", audioBlob, blobName);
+  if (language) {
+    formData.append("language", language);
+  }
+
+  const headers = {};
+  const token = await getToken().catch(() => null);
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}transcribe/`, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.detail || `Error ${response.status}`);
+  }
+
+  return response.json();
+}
