@@ -3,5 +3,11 @@
     color: white;
     text-align: center;
     padding: 1rem;
+}
 
+@media (max-width: 480px) {
+  .site-footer {
+    padding: 0.75rem;
+    font-size: 13px;
+  }
 }
