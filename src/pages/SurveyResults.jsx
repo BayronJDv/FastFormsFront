@@ -12,12 +12,37 @@ const toTextEntries = (question) => {
     return question.text_entries.map((entry) => ({
       text: entry?.text ?? "",
       isVoice: Boolean(entry?.is_voice),
+      language: entry?.language ?? null,
     }));
   }
   if (Array.isArray(question.texts)) {
-    return question.texts.map((text) => ({ text, isVoice: false }));
+    return question.texts.map((text) => ({ text, isVoice: false, language: null }));
   }
   return [];
+};
+
+// US-18 — Nombre legible del idioma detectado para la etiqueta del dashboard.
+const LANGUAGE_NAMES = {
+  es: "Español",
+  en: "Inglés",
+  fr: "Francés",
+  pt: "Portugués",
+  de: "Alemán",
+  it: "Italiano",
+  ca: "Catalán",
+  gl: "Gallego",
+  eu: "Euskera",
+  zh: "Chino",
+  ja: "Japonés",
+  ko: "Coreano",
+  ru: "Ruso",
+  ar: "Árabe",
+};
+
+const languageLabel = (code) => {
+  if (!code) return null;
+  const normalized = String(code).toLowerCase().split("-")[0];
+  return LANGUAGE_NAMES[normalized] || code.toUpperCase();
 };
 
 const SurveyResults = () => {
@@ -147,15 +172,25 @@ const SurveyResults = () => {
                           {filteredEntries.map((entry, index) => (
                             <li key={index} className="results-text-feed-item">
                               <span>{entry.text}</span>
-                              {entry.isVoice ? (
-                                <span
-                                  className="results-voice-badge"
-                                  title="Respuesta dictada por voz"
-                                  aria-label="Respuesta por voz"
-                                >
-                                  🎤 por voz
-                                </span>
-                              ) : null}
+                              <span className="results-entry-tags">
+                                {entry.isVoice ? (
+                                  <span
+                                    className="results-voice-badge"
+                                    title="Respuesta dictada por voz"
+                                    aria-label="Respuesta por voz"
+                                  >
+                                    🎤 por voz
+                                  </span>
+                                ) : null}
+                                {entry.isVoice && languageLabel(entry.language) ? (
+                                  <span
+                                    className="results-lang-badge"
+                                    title={`Idioma detectado: ${languageLabel(entry.language)}`}
+                                  >
+                                    🌐 {languageLabel(entry.language)}
+                                  </span>
+                                ) : null}
+                              </span>
                             </li>
                           ))}
                         </ul>

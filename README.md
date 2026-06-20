@@ -67,16 +67,25 @@ Fast Forms permite **dictar enunciados** mientras se construye una encuesta
 - **Resultados (US-17).** En el dashboard de resultados, las respuestas
   abiertas dictadas llevan un badge *🎤 por voz* y se puede filtrar el
   feed con la búsqueda por palabra clave.
+- **Multilingüe (US-18).** Las respuestas abiertas por voz se transcriben
+  con detección automática de idioma (`language="auto"`). El idioma
+  detectado se guarda con la respuesta y se muestra como etiqueta
+  *🌐 idioma* junto al badge de voz en el dashboard.
+- **Código por voz (US-19).** En la pantalla de inicio, el botón
+  *🎤 Dictar código* graba el código de acceso; el backend lo normaliza
+  ("a siete equis nueve ka" → `A7X9K`) y se muestra para confirmar antes
+  de entrar, con opción de corregirlo manualmente.
 
 ### Componentes y utilidades clave
 
 | Archivo | Para qué sirve |
 | --- | --- |
 | `src/components/VoiceInput.jsx` | Botón de micrófono reutilizable con MediaRecorder y estados (US-13/14/16). |
-| `src/lib/apiClient.js` (`transcribeAudio`) | Llama a `POST /api/v1/transcribe/` con el audio grabado. |
+| `src/lib/apiClient.js` (`transcribeAudio`) | Llama a `POST /api/v1/transcribe/` (idioma/auto, task, normalize). |
 | `src/lib/fuzzyMatch.js` | Empareja una transcripción con la opción más parecida (US-15). |
-| `src/components/SurveyQuestionField.jsx` | Integra voz en preguntas abiertas y de opción. |
-| `src/pages/SurveyResults.jsx` | Badge "por voz" + buscador por palabra clave (US-17). |
+| `src/components/SurveyQuestionField.jsx` | Integra voz en preguntas abiertas y de opción (US-14/15/18). |
+| `src/pages/SurveyResults.jsx` | Badge "por voz" + idioma + buscador (US-17/18). |
+| `src/pages/Home.jsx` | Ingreso del código de encuesta por voz (US-19). |
 
 ### Limitaciones conocidas
 

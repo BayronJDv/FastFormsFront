@@ -259,3 +259,24 @@
   gap: 8px;
   flex-wrap: wrap;
 }
+
+/* US-18 — Etiqueta de idioma detectado. */
+.results-entry-tags {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.results-lang-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #ecfdf3;
+  color: #027a48;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}

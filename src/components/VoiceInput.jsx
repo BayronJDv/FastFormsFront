@@ -37,6 +37,8 @@ const pickMimeType = () => {
 const VoiceInput = ({
   onResult,
   language = "es",
+  task,
+  normalizeCode = false,
   disabled = false,
   label = "Grabar",
   recordingLabel = "Detener",
@@ -137,12 +139,13 @@ const VoiceInput = ({
 
       setStatus("processing");
       try {
-        const result = await transcribeAudio(blob, { language });
+        const result = await transcribeAudio(blob, { language, task, normalizeCode });
         setStatus("idle");
         onResult?.({
           text: result.text || "",
           confidence: result.confidence ?? null,
           language: result.language || language,
+          normalizedCode: result.normalized_code ?? null,
         });
       } catch (error) {
         setStatus("error");

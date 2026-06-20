@@ -30,8 +30,12 @@ CREATE TABLE answers (
     response_id BIGINT REFERENCES responses(id) ON DELETE CASCADE,
     question_id BIGINT REFERENCES questions(id) ON DELETE CASCADE,
     answer_text TEXT NOT NULL, -- Aquí guardas la opción elegida o el texto libre
-    is_voice BOOLEAN NOT NULL DEFAULT FALSE -- US-17: marca "por voz" para las respuestas dictadas
+    is_voice BOOLEAN NOT NULL DEFAULT FALSE, -- US-17: marca "por voz" para las respuestas dictadas
+    language TEXT -- US-18: idioma detectado por Whisper (ISO 639-1), NULL si fue escrita
 );
 
--- US-17 — Migracion para bases existentes (idempotente):
+-- Migracion para bases existentes (idempotente):
+-- US-17:
 -- ALTER TABLE answers ADD COLUMN IF NOT EXISTS is_voice BOOLEAN NOT NULL DEFAULT FALSE;
+-- US-18:
+-- ALTER TABLE answers ADD COLUMN IF NOT EXISTS language TEXT;
