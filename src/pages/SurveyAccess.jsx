@@ -44,6 +44,7 @@ const SurveyAccess = () => {
   const [survey, setSurvey] = useState(null);
   const [answers, setAnswers] = useState({});
   const [voiceFlags, setVoiceFlags] = useState({});
+  const [voiceLangs, setVoiceLangs] = useState({});
   const [fieldErrors, setFieldErrors] = useState({});
   const [technicalError, setTechnicalError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -77,6 +78,7 @@ const SurveyAccess = () => {
         setSurvey(result.survey ?? null);
         setAnswers(buildInitialAnswers(result.survey?.questions ?? []));
         setVoiceFlags({});
+        setVoiceLangs({});
       } catch (error) {
         if (ignore) return;
         setViewState("api_error");
@@ -116,9 +118,14 @@ const SurveyAccess = () => {
     });
   };
 
-  // US-17 — Marca cada respuesta con su origen (voz/teclado) antes de enviarla.
-  const handleVoiceFlagChange = (questionId, isVoice) => {
+  // US-17 / US-18 — Marca cada respuesta con su origen (voz/teclado) y, si fue
+  // por voz, el idioma detectado por Whisper.
+  const handleVoiceFlagChange = (questionId, isVoice, language) => {
     setVoiceFlags((current) => ({ ...current, [questionId]: Boolean(isVoice) }));
+    setVoiceLangs((current) => ({
+      ...current,
+      [questionId]: isVoice ? language || null : null,
+    }));
   };
 
   const validateAnswers = () => {
@@ -167,6 +174,7 @@ const SurveyAccess = () => {
           questionId: question.id,
           answer: String(answers[question.id] ?? "").trim(),
           isVoice: Boolean(voiceFlags[question.id]),
+          language: voiceFlags[question.id] ? voiceLangs[question.id] ?? null : null,
         })),
       });
 

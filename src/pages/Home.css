@@ -850,3 +850,42 @@
     font-size: 20px;
   }
 }
+
+/* US-19 — Ingreso del código de encuesta por voz. */
+.code-voice-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+.code-voice-confirm {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: center;
+}
+
+.code-voice-confirm strong {
+  letter-spacing: 2px;
+}
+
+.code-voice-confirm-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.code-voice-edit-btn {
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 6px 14px;
+  cursor: pointer;
+  font-size: 14px;
+  color: inherit;
+}

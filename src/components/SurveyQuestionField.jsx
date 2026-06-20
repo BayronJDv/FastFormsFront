@@ -10,19 +10,20 @@ const SurveyQuestionField = ({ question, value, error, onChange, onVoiceFlag }) 
   // de marcar la opcion.
   const [pendingMatch, setPendingMatch] = useState(null);
 
-  const handleVoiceOpen = ({ text }) => {
+  // US-18 — En respuestas abiertas dejamos que Whisper detecte el idioma.
+  const handleVoiceOpen = ({ text, language }) => {
     if (!text) return;
     onChange(question.id, text);
-    onVoiceFlag?.(question.id, true);
+    onVoiceFlag?.(question.id, true, language);
   };
 
-  const handleVoiceChoice = ({ text, confidence }) => {
+  const handleVoiceChoice = ({ text, confidence, language }) => {
     if (!text) return;
     const options = questionType === "yes_no" ? ["Sí", "No"] : question.options || [];
     const { option, score } = findBestOptionMatch(text, options);
 
     if (!option) {
-      setPendingMatch({ transcript: text, candidate: null, score: 0, confidence });
+      setPendingMatch({ transcript: text, candidate: null, score: 0, confidence, language });
       return;
     }
 
@@ -31,19 +32,19 @@ const SurveyQuestionField = ({ question, value, error, onChange, onVoiceFlag }) 
       (typeof confidence === "number" && confidence < CONFIDENCE_THRESHOLD);
 
     if (lowConfidence) {
-      setPendingMatch({ transcript: text, candidate: option, score, confidence });
+      setPendingMatch({ transcript: text, candidate: option, score, confidence, language });
       return;
     }
 
     onChange(question.id, option);
-    onVoiceFlag?.(question.id, true);
+    onVoiceFlag?.(question.id, true, language);
     setPendingMatch(null);
   };
 
   const confirmPendingMatch = () => {
     if (!pendingMatch?.candidate) return;
     onChange(question.id, pendingMatch.candidate);
-    onVoiceFlag?.(question.id, true);
+    onVoiceFlag?.(question.id, true, pendingMatch.language);
     setPendingMatch(null);
   };
 
@@ -71,6 +72,7 @@ const SurveyQuestionField = ({ question, value, error, onChange, onVoiceFlag }) 
           />
           <VoiceInput
             onResult={handleVoiceOpen}
+            language="auto"
             label="Responder por voz"
             recordingLabel="Detener"
           />

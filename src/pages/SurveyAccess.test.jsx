@@ -108,9 +108,9 @@ describe("SurveyAccess", () => {
       expect(surveyService.submitSurveyResponse).toHaveBeenCalledWith({
         surveyId: 22,
         answers: [
-          { questionId: 1, answer: "Más rapidez en soporte", isVoice: false },
-          { questionId: 2, answer: "Excelente", isVoice: false },
-          { questionId: 3, answer: "Sí", isVoice: false },
+          { questionId: 1, answer: "Más rapidez en soporte", isVoice: false, language: null },
+          { questionId: 2, answer: "Excelente", isVoice: false, language: null },
+          { questionId: 3, answer: "Sí", isVoice: false, language: null },
         ],
       });
     });

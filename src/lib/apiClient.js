@@ -138,15 +138,18 @@ export function getSurvey(surveyId) {
 }
 
 /**
- * US-12 — Envia el audio grabado al backend para transcribirlo con Whisper.
+ * US-12 — Envia el audio grabado al backend para transcribirlo con Whisper local.
  * El token se incluye si hay sesion (US-13 / Constructor), pero el endpoint
  * tambien acepta requests anonimas (US-14 / Encuestado).
  * @param {Blob} audioBlob
- * @param {{ language?: string, filename?: string }} [options]
- * @returns {Promise<{ text: string, language: string, confidence: number | null }>}
+ * @param {{ language?: string, task?: "transcribe"|"translate", normalizeCode?: boolean, filename?: string }} [options]
+ *   - language: codigo ISO ("es"), "auto" para detectar (US-18), o vacio.
+ *   - task: "translate" para traducir a ingles (US-18).
+ *   - normalizeCode: true para que el backend devuelva normalized_code (US-19).
+ * @returns {Promise<{ text: string, language: string, confidence: number | null, segments: Array, normalized_code: string | null }>}
  */
 export async function transcribeAudio(audioBlob, options = {}) {
-  const { language = "es", filename } = options;
+  const { language = "es", task, normalizeCode, filename } = options;
   const extension = (audioBlob.type || "audio/webm").split("/")[1]?.split(";")[0] || "webm";
   const blobName = filename || `clip.${extension}`;
 
@@ -154,6 +157,12 @@ export async function transcribeAudio(audioBlob, options = {}) {
   formData.append("audio", audioBlob, blobName);
   if (language) {
     formData.append("language", language);
+  }
+  if (task) {
+    formData.append("task", task);
+  }
+  if (normalizeCode) {
+    formData.append("normalize", "code");
   }
 
   const headers = {};

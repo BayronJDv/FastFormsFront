@@ -1,5 +1,32 @@
 # Changelog
 
+## Sprint 6 — Voz multilingüe y acceso por voz
+
+### US-18 · Internacionalización: Respuestas por Voz Multilingües
+- Las preguntas abiertas dictadas usan `language="auto"`: Whisper detecta el
+  idioma del encuestado sin configuración previa.
+- El idioma detectado se propaga (`onVoiceFlag(questionId, isVoice, language)`)
+  y se envía con cada respuesta (`surveyService` + `SurveyAccess`).
+- `SurveyResults` muestra una etiqueta **🌐 idioma** junto al badge "por voz"
+  en el feed de respuestas abiertas (mapa de códigos ISO → nombre).
+
+### US-19 · Acceso: Ingreso del Código de Encuesta por Voz
+- Botón **🎤 Dictar código** en el `code-card` de `Home`. Envía el audio a
+  `/transcribe` con `normalize=code`; el backend devuelve el código
+  interpretado.
+- Flujo de confirmación: se muestra el código entendido (p. ej. `A7X9K`) con
+  opciones "Sí, entrar" o "Corregir manualmente" (fallback a tecleo) antes de
+  navegar a la encuesta.
+
+### US-12 (cliente)
+- `transcribeAudio` acepta `{ language, task, normalizeCode }` y devuelve
+  además `segments` y `normalized_code`.
+- `VoiceInput` reenvía `task`/`normalizeCode` y expone el idioma y el código
+  normalizado en `onResult`.
+- `submitSurveyResponse` reintenta el insert sin las columnas opcionales
+  (`is_voice`, `language`) si la base aún no está migrada (evita romper el
+  envío del encuestado).
+
 ## Sprint 4 — Voz (Whisper)
 
 ### US-12 · Infra (frontend)
