@@ -276,12 +276,17 @@ const CreateSurvey = () => {
             pregunta.
           </div>
         ) : (
-          questions.map((q) => {
+          questions.map((q, index) => {
             const initial = answersData[q.id];
+            const typeLabel =
+              questionTypes.find((t) => t.id === q.type)?.label ?? "Pregunta";
             return (
               <div key={q.id} className="question-container">
                 <div className="question-toolbar">
-                  <span className="question-chip">Pregunta</span>
+                  <span className="question-chip">
+                    <span className="question-chip-num">{index + 1}</span>
+                    {typeLabel}
+                  </span>
                   <button
                     type="button"
                     className="delete-btn"

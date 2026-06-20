@@ -217,13 +217,27 @@
 }
 
 .back-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: #fff;
   border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  width: 40px;
-  height: 40px;
+  border-radius: 50%;
+  width: 42px;
+  height: 42px;
   font-size: 18px;
+  line-height: 1;
+  color: var(--gray-700);
   cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+}
+
+.back-btn:hover {
+  color: var(--primary);
+  border-color: var(--primary-200);
+  background: var(--primary-50);
+  transform: translateX(-2px);
 }
 
 @media (max-width: 1024px) {
