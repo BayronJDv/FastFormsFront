@@ -13,23 +13,24 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  border: 1px solid #d0d5dd;
-  background: #ffffff;
-  color: #344054;
-  padding: 6px 12px;
+  border: 1px solid var(--primary-200, #c7d2fe);
+  background: var(--primary-50, #eef2ff);
+  color: var(--primary, #4f46e5);
+  padding: 7px 14px;
   border-radius: 999px;
   cursor: pointer;
   font-size: 14px;
-  font-weight: 500;
-  transition: background 0.15s, border-color 0.15s;
+  font-weight: 600;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
 }
 
 .voice-btn:hover {
-  background: #f4f4f5;
+  background: var(--primary-100, #e0e7ff);
+  border-color: var(--primary, #4f46e5);
 }
 
 .voice-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.55;
   cursor: not-allowed;
 }
 

@@ -168,7 +168,7 @@ const Home = () => {
                 correcto?
               </span>
               <div className="code-voice-confirm-actions">
-                <button className="arrow-btn" onClick={confirmVoiceCode}>
+                <button className="code-voice-confirm-btn" onClick={confirmVoiceCode}>
                   Sí, entrar
                 </button>
                 <button
