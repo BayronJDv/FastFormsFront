@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import VoiceInput from "../components/VoiceInput";
 import "./Home.css";
 
 const Home = () => {
@@ -7,6 +8,8 @@ const Home = () => {
   const statsRef = useRef(null);
   const navigate = useNavigate();
   const [surveyCode, setSurveyCode] = useState("");
+  // US-19 — Código interpretado por voz, a confirmar antes de validar.
+  const [voiceCode, setVoiceCode] = useState(null);
   const [stats, setStats] = useState({
     time: 0,
     questions: 0,
@@ -93,6 +96,19 @@ const Home = () => {
     navigate(`/survey/${normalizedCode}`);
   };
 
+  // US-19 — Al dictar el código, el backend lo normaliza ("a siete equis…" →
+  // "A7X9K"). Mostramos el resultado para confirmar antes de validar.
+  const handleVoiceCode = ({ normalizedCode, text }) => {
+    const interpreted = (normalizedCode || text || "").toUpperCase();
+    setVoiceCode(interpreted);
+    setSurveyCode(interpreted);
+  };
+
+  const confirmVoiceCode = () => {
+    setVoiceCode(null);
+    handleSurveyAccess();
+  };
+
   return (
     <div className="home">
       <section className="hero">
@@ -117,7 +133,10 @@ const Home = () => {
               type="text"
               placeholder="Ingresa el código (ej. A7X9K)"
               value={surveyCode}
-              onChange={(event) => setSurveyCode(event.target.value)}
+              onChange={(event) => {
+                setSurveyCode(event.target.value);
+                setVoiceCode(null);
+              }}
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
                   event.preventDefault();
@@ -130,6 +149,37 @@ const Home = () => {
               →
             </button>
           </div>
+
+          {/* US-19 — Ingreso del código por voz */}
+          <div className="code-voice-row">
+            <VoiceInput
+              onResult={handleVoiceCode}
+              language="es"
+              normalizeCode
+              label="Dictar código"
+              recordingLabel="Detener"
+            />
+          </div>
+
+          {voiceCode ? (
+            <div className="code-voice-confirm" role="status">
+              <span>
+                Entendí el código: <strong>{voiceCode || "(vacío)"}</strong>. ¿Es
+                correcto?
+              </span>
+              <div className="code-voice-confirm-actions">
+                <button className="code-voice-confirm-btn" onClick={confirmVoiceCode}>
+                  Sí, entrar
+                </button>
+                <button
+                  className="code-voice-edit-btn"
+                  onClick={() => setVoiceCode(null)}
+                >
+                  Corregir manualmente
+                </button>
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <div className="hero-buttons">

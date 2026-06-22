@@ -136,3 +136,51 @@ export function updateDraft(draftId, draftData) {
 export function getSurvey(surveyId) {
   return request(`surveys/${surveyId}`, { method: "GET" });
 }
+
+/**
+ * US-12 — Envia el audio grabado al backend para transcribirlo con Whisper local.
+ * El token se incluye si hay sesion (US-13 / Constructor), pero el endpoint
+ * tambien acepta requests anonimas (US-14 / Encuestado).
+ * @param {Blob} audioBlob
+ * @param {{ language?: string, task?: "transcribe"|"translate", normalizeCode?: boolean, filename?: string }} [options]
+ *   - language: codigo ISO ("es"), "auto" para detectar (US-18), o vacio.
+ *   - task: "translate" para traducir a ingles (US-18).
+ *   - normalizeCode: true para que el backend devuelva normalized_code (US-19).
+ * @returns {Promise<{ text: string, language: string, confidence: number | null, segments: Array, normalized_code: string | null }>}
+ */
+export async function transcribeAudio(audioBlob, options = {}) {
+  const { language = "es", task, normalizeCode, filename } = options;
+  const extension = (audioBlob.type || "audio/webm").split("/")[1]?.split(";")[0] || "webm";
+  const blobName = filename || `clip.${extension}`;
+
+  const formData = new FormData();
+  formData.append("audio", audioBlob, blobName);
+  if (language) {
+    formData.append("language", language);
+  }
+  if (task) {
+    formData.append("task", task);
+  }
+  if (normalizeCode) {
+    formData.append("normalize", "code");
+  }
+
+  const headers = {};
+  const token = await getToken().catch(() => null);
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}transcribe/`, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.detail || `Error ${response.status}`);
+  }
+
+  return response.json();
+}

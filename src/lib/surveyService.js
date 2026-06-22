@@ -118,13 +118,36 @@ export const submitSurveyResponse = async ({ surveyId, answers }) => {
     throw responseError;
   }
 
-  const answersPayload = answers.map((answer) => ({
-    response_id: response.id,
-    question_id: answer.questionId,
-    answer_text: answer.answer,
-  }));
+  // Columnas opcionales que dependen de migraciones de voz
+  // (US-17 is_voice / US-18 language). Si la base aun no las tiene, el insert
+  // falla con 42703; reintentamos descartando esas columnas para no romper el
+  // envio del encuestado.
+  const buildPayload = (omit = []) =>
+    answers.map((answer) => {
+      const row = {
+        response_id: response.id,
+        question_id: answer.questionId,
+        answer_text: answer.answer,
+        is_voice: Boolean(answer.isVoice),
+        language: answer.language ?? null,
+      };
+      omit.forEach((column) => delete row[column]);
+      return row;
+    });
 
-  const { error: answersError } = await supabase.from("answers").insert(answersPayload);
+  const isMissingColumn = (error) =>
+    error?.code === "42703" || /column .* does not exist/i.test(error?.message || "");
+
+  let { error: answersError } = await supabase
+    .from("answers")
+    .insert(buildPayload());
+
+  if (answersError && isMissingColumn(answersError)) {
+    // Reintento sin las columnas opcionales (comportamiento previo a US-17/18).
+    ({ error: answersError } = await supabase
+      .from("answers")
+      .insert(buildPayload(["is_voice", "language"])));
+  }
 
   if (answersError) {
     throw answersError;
