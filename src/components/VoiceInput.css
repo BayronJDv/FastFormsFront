@@ -56,7 +56,7 @@
 
 .voice-status {
   font-size: 13px;
-  color: #475467;
+  color: var(--text-muted);
 }
 
 .voice-status-error {
