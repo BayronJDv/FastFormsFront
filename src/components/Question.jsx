@@ -1,5 +1,4 @@
 import React, { useState, useEffect, memo } from 'react';
-import VoiceInput from './VoiceInput';
 
 const Question = memo(({
   id,
@@ -35,13 +34,6 @@ const Question = memo(({
     setChoices(prev => prev.filter(c => c.id !== choiceId));
   };
 
-  // US-13 — Dictado de preguntas: el texto transcrito se inserta en el campo y
-  // queda editable. Si ya hay contenido, lo concatena con un espacio.
-  const handleVoiceResult = ({ text }) => {
-    if (!text) return;
-    setStatement(prev => (prev ? `${prev} ${text}`.trim() : text));
-  };
-
   return (
     <div className="question-builder">
       <label className="question-builder-label" htmlFor={`input-${id}`}>
@@ -54,12 +46,6 @@ const Question = memo(({
         value={statement}
         onChange={(e) => setStatement(e.target.value)}
         placeholder="Escribe tu pregunta aquí..."
-      />
-
-      <VoiceInput
-        onResult={handleVoiceResult}
-        label="Dictar enunciado"
-        recordingLabel="Detener dictado"
       />
 
       {type === 'unique_choice' && (
