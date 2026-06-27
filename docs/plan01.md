@@ -184,3 +184,5 @@ pnpm build
 **Editar**: los listados en la sección 4.
 
 **No tocar**: `CHANGELOG.md` (decisión explícita), `vercel.json`, `vite.config.js`, `eslint.config.js`, `index.html` (sin anti-FOUC), backend.
+
+### tiempo de ejecucion : 6.47min
