@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAtom } from "jotai";
 import { userAtom } from "../stores/authAtom";
@@ -13,6 +13,7 @@ import {
   getSurvey,
   generateSurveyDraft,
 } from "../lib/apiClient";
+import { generateSurveyFromImage } from "../services/api";
 import "./CreateSurvey.css";
 
 const QUESTION_TYPE_MAP = {
@@ -53,11 +54,31 @@ const CreateSurvey = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [showAiConfirm, setShowAiConfirm] = useState(false);
 
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [visionContext, setVisionContext] = useState("");
+  const [numQuestions, setNumQuestions] = useState(5);
+
+  const [showCameraModal, setShowCameraModal] = useState(false);
+  const [cameraStream, setCameraStream] = useState(null);
+  const [capturedPhoto, setCapturedPhoto] = useState(null);
+
+  const fileInputRef = useRef(null);
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+
   const questionTypes = [
     { id: "open", label: "Pregunta Abierta" },
     { id: "unique_choice", label: "Opción Múltiple" },
     { id: "yes_no", label: "Sí / No" },
   ];
+
+  const mapBackendType = (backendType) => {
+    const map = { multiple_choice: "unique_choice" };
+    return map[backendType] || backendType;
+  };
 
   // Si entramos con :draftId en la URL, traemos el borrador y repoblamos el editor.
   useEffect(() => {
@@ -175,6 +196,126 @@ const CreateSurvey = () => {
     return true;
   };
 
+  // --- Vision: cámara y archivos ---
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setErrorMessage("");
+    setSelectedFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const openCamera = async () => {
+    setErrorMessage("");
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" },
+        audio: false,
+      });
+      setCameraStream(stream);
+      setShowCameraModal(true);
+    } catch {
+      setErrorMessage("No se pudo acceder a la cámara. Verifica los permisos del navegador.");
+    }
+  };
+
+  const captureFrame = () => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas) return;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0);
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const file = new File([blob], "camera-photo.jpg", { type: "image/jpeg" });
+      const previewUrl = URL.createObjectURL(blob);
+      setCapturedPhoto({ file, previewUrl });
+    }, "image/jpeg", 0.9);
+  };
+
+  const confirmCapturedPhoto = () => {
+    if (!capturedPhoto) return;
+    setSelectedFile(capturedPhoto.file);
+    setImagePreview(capturedPhoto.previewUrl);
+    setCapturedPhoto(null);
+    closeCamera();
+  };
+
+  const retakePhoto = () => {
+    setCapturedPhoto(null);
+  };
+
+  const closeCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach((t) => t.stop());
+      setCameraStream(null);
+    }
+    setShowCameraModal(false);
+    setCapturedPhoto(null);
+  };
+
+  useEffect(() => {
+    if (showCameraModal && cameraStream && videoRef.current) {
+      videoRef.current.srcObject = cameraStream;
+    }
+  }, [showCameraModal, cameraStream, capturedPhoto]);
+
+  useEffect(() => {
+    return () => {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach((t) => t.stop());
+      }
+    };
+  }, [cameraStream]);
+
+  const handleClearImage = () => {
+    setSelectedFile(null);
+    setImagePreview(null);
+    setErrorMessage("");
+    setVisionContext("");
+    setNumQuestions(5);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleGenerateFromImage = async () => {
+    if (!selectedFile) return;
+    setIsLoading(true);
+    setErrorMessage("");
+    try {
+      const data = await generateSurveyFromImage(selectedFile, {
+        context: visionContext,
+        numQuestions,
+      });
+      setTitle(data.title || "");
+      const newQuestions = data.questions.map((q) => ({
+        id: crypto.randomUUID(),
+        type: mapBackendType(q.question_type),
+        initialStatement: q.content,
+        initialOptions: q.options || [],
+      }));
+      setQuestions(newQuestions);
+      const newAnswersData = {};
+      newQuestions.forEach((q) => {
+        newAnswersData[q.id] = {
+          statement: q.initialStatement,
+          type: q.type,
+          ...(q.type === "unique_choice" ? { options: q.initialOptions } : {}),
+        };
+      });
+      setAnswersData(newAnswersData);
+      toast.success(`Encuesta generada con ${newQuestions.length} preguntas.`);
+    } catch (err) {
+      setErrorMessage(err.message || "Error al generar la encuesta desde la imagen.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // --- Borrador y publicación ---
+
   const handleSaveDraft = async () => {
     setIsSavingDraft(true);
     try {
@@ -184,8 +325,6 @@ const CreateSurvey = () => {
         : await saveDraft(payload);
       toast.success("Borrador guardado.");
       if (!draftId && result?.id) {
-        // Reemplazamos la URL para que sucesivos 'Guardar' actualicen este
-        // mismo borrador en lugar de crear duplicados.
         navigate(`/create-survey/${result.id}`, { replace: true });
       } else {
         navigate("/dashboard");
@@ -269,7 +408,6 @@ const CreateSurvey = () => {
         const created = await createSurvey(buildStrictPayload());
         surveyId = created.id;
       } else {
-        // Sincronizamos los cambios en pantalla con el borrador antes de publicar.
         await updateDraft(surveyId, buildDraftPayload());
       }
       const published = await publishSurvey(surveyId);
@@ -315,6 +453,91 @@ const CreateSurvey = () => {
             {isSubmitting ? "Procesando..." : "Publicar"}
           </button>
         </div>
+      </div>
+
+      {/* GENERAR DESDE IMAGEN */}
+      <div className="card vision-card">
+        <h3>Generar desde imagen</h3>
+        <p className="vision-subtitle">
+          Sube o toma una foto y la IA generará una encuesta automáticamente.
+        </p>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
+          className="vision-file-input"
+        />
+        <canvas ref={canvasRef} className="vision-file-input" />
+
+        {!imagePreview ? (
+          <div className="vision-upload-area">
+            <button
+              className="vision-btn vision-btn-camera"
+              onClick={openCamera}
+            >
+              Tomar foto
+            </button>
+            <button
+              className="vision-btn vision-btn-upload"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              Subir imagen
+            </button>
+          </div>
+        ) : (
+          <div className="vision-preview">
+            <img src={imagePreview} alt="Vista previa" className="vision-img" />
+            <div className="vision-options">
+              <label className="vision-label">Contexto (opcional)</label>
+              <textarea
+                className="vision-textarea"
+                placeholder="Ej: Encuesta para evaluar la experiencia del usuario en esta tienda..."
+                value={visionContext}
+                onChange={(e) => setVisionContext(e.target.value)}
+                maxLength={500}
+                rows={2}
+              />
+              <label className="vision-label">Número de preguntas</label>
+              <input
+                type="number"
+                className="vision-num-input"
+                min={1}
+                max={12}
+                value={numQuestions}
+                onChange={(e) => setNumQuestions(Math.min(12, Math.max(1, Number(e.target.value) || 1)))}
+              />
+            </div>
+            <div className="vision-preview-actions">
+              <button
+                className="vision-btn vision-btn-generate"
+                onClick={handleGenerateFromImage}
+                disabled={isLoading}
+              >
+                {isLoading ? "Generando..." : "Generar encuesta"}
+              </button>
+              <button
+                className="vision-btn vision-btn-clear"
+                onClick={handleClearImage}
+                disabled={isLoading}
+              >
+                Quitar imagen
+              </button>
+            </div>
+          </div>
+        )}
+
+        {isLoading && (
+          <div className="vision-loading">
+            <div className="vision-spinner" />
+            <span>Analizando imagen y generando preguntas...</span>
+          </div>
+        )}
+
+        {errorMessage && (
+          <div className="vision-error">{errorMessage}</div>
+        )}
       </div>
 
       {/* INFO ENCUESTA */}
@@ -385,7 +608,7 @@ const CreateSurvey = () => {
         {questions.length === 0 ? (
           <div className="empty-box">
             Aún no has agregado preguntas. Comienza agregando tu primera
-            pregunta.
+            pregunta o genera una desde una imagen.
           </div>
         ) : (
           questions.map((q, index) => {
@@ -458,6 +681,40 @@ const CreateSurvey = () => {
         onConfirm={performGenerateAI}
         onCancel={() => setShowAiConfirm(false)}
       />
+
+      {showCameraModal && (
+        <div className="camera-modal-overlay" onClick={closeCamera}>
+          <div className="camera-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="camera-modal-header">
+              <h3>Tomar foto</h3>
+              <button className="camera-modal-close" onClick={closeCamera}>X</button>
+            </div>
+
+            {!capturedPhoto ? (
+              <>
+                <video ref={videoRef} autoPlay playsInline className="camera-video" />
+                <div className="camera-modal-actions">
+                  <button className="vision-btn vision-btn-camera" onClick={captureFrame}>
+                    Capturar
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <img src={capturedPhoto.previewUrl} alt="Foto capturada" className="camera-video" />
+                <div className="camera-modal-actions">
+                  <button className="vision-btn vision-btn-generate" onClick={confirmCapturedPhoto}>
+                    Usar esta foto
+                  </button>
+                  <button className="vision-btn vision-btn-clear" onClick={retakePhoto}>
+                    Tomar otra
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

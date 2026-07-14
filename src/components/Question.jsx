@@ -1,12 +1,6 @@
 import React, { useState, useEffect, memo } from 'react';
 
-const Question = memo(({
-  id,
-  type,
-  onChange,
-  initialStatement = '',
-  initialOptions = null,
-}) => {
+const Question = memo(({ id, type, onChange, initialStatement = '', initialOptions = null }) => {
   const [statement, setStatement] = useState(initialStatement);
   const [choices, setChoices] = useState(() =>
     initialOptions && initialOptions.length > 0

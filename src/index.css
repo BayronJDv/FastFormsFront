@@ -10,7 +10,9 @@
   --accent-light: #22d3ee;
 
   --success: #10b981;
+  --success-dark: #059669;
   --danger: #ef4444;
+  --danger-50: #fef2f2;
   --warning: #f59e0b;
 
   --gray-50: #f9fafb;
@@ -62,6 +64,9 @@
   --border-strong: #3b4150;
   --header-bg: rgba(20, 22, 28, 0.85);
   --header-border: rgba(45, 49, 58, 0.6);
+
+  --danger-50: rgba(239, 68, 68, 0.1);
+  --success-dark: #34d399;
 
   --gray-50: #1a1d24;
   --gray-100: #232730;
