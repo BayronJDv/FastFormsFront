@@ -41,7 +41,7 @@ export const generateSurveyFromImage = (imageFile, { language = "es", context = 
   formData.append("context", context);
   formData.append("num_questions", numQuestions);
 
-  return request("/surveys/generate-from-image", {
+  return request("surveys/generate-from-image", {
     method: "POST",
     body: formData,
   });
