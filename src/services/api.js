@@ -1,6 +1,12 @@
 import { supabase } from "../lib/supabaseClient";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1/";
+function resolveBaseUrl() {
+  const raw = import.meta.env.VITE_API_URL;
+  if (!raw) return "http://localhost:8000/api/v1/";
+  return raw.endsWith("/") ? `${raw}api/v1/` : `${raw}/api/v1/`;
+}
+
+const API_BASE = resolveBaseUrl();
 
 const getToken = async () => {
   const {
